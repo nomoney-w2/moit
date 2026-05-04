@@ -2,10 +2,10 @@ import { Metadata } from 'next';
 
 import { getMeetingById } from '@/entities/meet/api/getMeetingById';
 import { type Participant } from '@/entities/meet/dto/meet.dto';
+import { generateMockVoteTimeSlotStat } from '@/entities/voteTimeSlotStat/lib/mock';
+import MeetResultTablePage from '@/features/meet-result-table/ui/MeetResultTablePage';
 import { BASE_URL } from '@/shared/config/constants';
 import { Person } from '@/shared/types/common';
-import { Header } from '@/shared/ui/header/Header';
-import { VoteResultDataView } from '@/widgets/vote-result/ui/VoteResultDataView';
 
 import ParticipantHeader from './ParticipantHeader';
 import { VoteActionButtons } from './VoteActionButtons';
@@ -81,32 +81,25 @@ function getStatsFromParticipants(
 
 export default async function ResultPage({ params }: PageProps) {
   const { meetingId } = await params;
-  // Fetch meeting data from API
   const meetingData = await getMeetingById(meetingId);
-  // Derive stats
   const stats = getStatsFromParticipants(
     meetingData.dates,
     meetingData.participants,
   );
 
-  // Derive date range (min/max of candidate dates)
   const sortedDates = [...meetingData.dates].sort();
   const openRange = {
     start: sortedDates[0],
     end: sortedDates[sortedDates.length - 1],
   };
 
-  // Extract participant names for the dropdown
   const participantNames = meetingData.participants.map((p) => p.name);
+  const voteCount = meetingData.participants.filter((p) => p.hasVoted).length;
 
-  // 데이터 로드 시간 (HH:MM 형식, 한국 시간 기준)
-  const koreaTime = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }),
-  );
-  const standardTime = `${koreaTime.getHours().toString().padStart(2, '0')}:${koreaTime.getMinutes().toString().padStart(2, '0')}`;
+  const slotStat = generateMockVoteTimeSlotStat(meetingId, sortedDates);
 
   return (
-    <div className='min-h-screen-safe flex flex-col bg-gray-50 pt-14 pb-25'>
+    <div className='min-h-screen-safe flex flex-col bg-white pt-14 pb-25'>
       <div className='fixed top-0 right-0 left-0 z-50 mx-auto w-full max-w-screen-sm bg-white'>
         <ParticipantHeader
           title={`${meetingData.hostName}님이 초대한 ${meetingData.title}`}
@@ -115,15 +108,12 @@ export default async function ResultPage({ params }: PageProps) {
         />
       </div>
 
-      <Header
-        voteCount={meetingData.participants.length}
-        standardTime={standardTime}
-      />
-
-      <VoteResultDataView
+      <MeetResultTablePage
+        slotStat={slotStat}
+        voteCount={voteCount}
         participantNames={participantNames}
         openRange={openRange}
-        stats={stats}
+        dateStats={stats}
       />
 
       <VoteActionButtons meetingId={meetingId} />

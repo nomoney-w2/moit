@@ -7,6 +7,7 @@ import {
   type VoteTimeSlotStat,
 } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
 import { END_HOUR, START_HOUR, TOTAL_SLOTS } from '@/shared/config/timeSlot';
+import { parseDate } from '@/shared/lib/date';
 
 import { computeHeatmapIntensity } from '../lib/computeHeatmapIntensity';
 import { cellKey } from '../lib/slotKey';
@@ -26,7 +27,7 @@ const COL_W = `calc((100cqi - ${GRID_PADDING_X * 2 + TIME_COL_W + COL_GAP * VISI
 const WEEK_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
 function formatDateHeader(dateStr: string): { weekday: string; md: string } {
-  const d = new Date(dateStr);
+  const d = parseDate(dateStr);
   const month = (d.getMonth() + 1).toString().padStart(2, '0');
   const day = d.getDate().toString().padStart(2, '0');
   return { weekday: WEEK_KO[d.getDay()], md: `${month}.${day}` };
@@ -90,8 +91,8 @@ export default function HeatmapGrid({
       <div className='flex' style={{ gap: COL_GAP }}>
         {slotStat.dates.map((date) => {
           const { weekday, md } = formatDateHeader(date);
-          const isWeekend =
-            new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
+          const dow = parseDate(date).getDay();
+          const isWeekend = dow === 0 || dow === 6;
 
           return (
             <div key={date} className='shrink-0' style={{ width: COL_W }}>

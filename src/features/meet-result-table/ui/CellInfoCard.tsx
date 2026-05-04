@@ -8,6 +8,7 @@ import {
 
 import { type VoteTimeSlotStat } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
 import { SLOTS_PER_HOUR, START_HOUR } from '@/shared/config/timeSlot';
+import { parseDate } from '@/shared/lib/date';
 import Chip from '@/shared/ui/chip/Chip';
 
 import { computeHeatmapIntensity } from '../lib/computeHeatmapIntensity';
@@ -23,7 +24,7 @@ const CARD_INSET_X_PX = 12; // matches inset-x-3
 const CARD_MAX_W_PX = SCREEN_SM_PX - CARD_INSET_X_PX * 2;
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
+  const d = parseDate(dateStr);
   const month = d.getMonth() + 1;
   const day = d.getDate();
   const weekday = WEEK_KO[d.getDay()];
