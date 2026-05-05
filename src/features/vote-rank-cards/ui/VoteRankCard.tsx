@@ -7,23 +7,18 @@ import type {
   RankedSlot,
   TimeSlotId,
 } from '@/features/vote-rank-cards/lib/types';
+import RankChip, {
+  type RankChipRank,
+} from '@/features/vote-rank-cards/ui/RankChip';
 import { cn } from '@/shared/lib/utils';
-import { Badge, type BadgeProps } from '@/shared/ui/Badge';
+import Chip from '@/shared/ui/chip/Chip';
 import Icon from '@/shared/ui/icon/Icon';
 
 interface VoteRankCardProps {
   slot: RankedSlot;
+  totalVoters: number;
   isOpen: boolean;
   onToggle: (id: TimeSlotId) => void;
-}
-
-function getRankBadgeVariant(rank: number): BadgeProps['variant'] {
-  if (rank === 1) return 'rank1';
-  if (rank === 2) return 'rank2';
-  if (rank === 3) return 'rank3';
-  if (rank === 4) return 'rank4';
-  if (rank === 5) return 'rank5';
-  return 'rank5';
 }
 
 function formatDateLabel(isoDate: string): string {
@@ -32,6 +27,7 @@ function formatDateLabel(isoDate: string): string {
 
 export default function VoteRankCard({
   slot,
+  totalVoters,
   isOpen,
   onToggle,
 }: VoteRankCardProps) {
@@ -40,7 +36,7 @@ export default function VoteRankCard({
   const hasBadge = slot.rank !== null && slot.rank >= 1 && slot.rank <= 5;
 
   return (
-    <li className='bg-gray-0 overflow-hidden rounded-2xl border border-gray-200'>
+    <li className='bg-gray-0 overflow-hidden rounded-lg border border-gray-200'>
       <button
         type='button'
         id={headerId}
@@ -49,32 +45,34 @@ export default function VoteRankCard({
         onClick={() => onToggle(slot.id)}
         className='flex w-full items-center gap-3 px-5 py-4 text-left'
       >
-        <div className='flex flex-1 flex-col gap-1'>
-          <span className='text-body-4 text-gray-600'>
+        <div className='flex flex-1 flex-col gap-[3px]'>
+          <span className='text-body-4 text-text-secondary'>
             {formatDateLabel(slot.date)}
           </span>
-          <div className='flex items-center gap-2'>
-            <span className='text-title-4 font-semibold text-gray-900'>
+          <div className='flex items-center gap-[6px]'>
+            <span className='text-title-7 text-gray-900'>
               {slot.startTime} - {slot.endTime}
             </span>
-            {hasBadge ? (
-              <Badge
-                variant={getRankBadgeVariant(slot.rank as number)}
-                size='sm'
-              >
-                {slot.rank}위
-              </Badge>
-            ) : null}
+            {hasBadge ? <RankChip rank={slot.rank as RankChipRank} /> : null}
           </div>
         </div>
-        <Icon
-          name='arrow_down'
-          size='sm'
-          className={cn(
-            'text-gray-400 transition-transform duration-200',
-            !isOpen && 'rotate-180',
-          )}
-        />
+        <div className='flex shrink-0 items-center gap-1'>
+          <div className='flex items-center gap-0.5'>
+            <Icon name='ic_people' size={16} className='text-text-tertiary' />
+            <span className='text-body-4 text-text-tertiary'>
+              <span className='text-gray-900'>{slot.canCount}</span>
+              <span>/{totalVoters}</span>
+            </span>
+          </div>
+          <Icon
+            name='arrow_down'
+            size='md'
+            className={cn(
+              'text-text-tertiary transition-transform duration-200',
+              isOpen && 'rotate-180',
+            )}
+          />
+        </div>
       </button>
       <div
         id={panelId}
@@ -92,32 +90,46 @@ export default function VoteRankCard({
 function VoteRankCardBody({ slot }: { slot: RankedSlot }) {
   return (
     <div className='flex flex-col gap-4'>
-      <section>
-        <h3 className='text-body-2 font-semibold text-gray-900'>
+      <section className='flex flex-col gap-2'>
+        <div className='text-body-5 text-primary-default flex items-center gap-0.5'>
+          <Icon name='ic_circle_check_filled' size={16} />
           {slot.canCount}명이 가능해요
-        </h3>
+        </div>
         {slot.canCount > 0 ? (
-          <ul className='text-body-4 mt-2 flex flex-wrap gap-x-3 gap-y-1 text-gray-700'>
+          <div className='flex flex-wrap gap-1.5'>
             {slot.canPeople.map((p) => (
-              <li key={p.id}>{p.name}</li>
+              <Chip
+                key={p.id}
+                text={p.name}
+                variant='fill'
+                size='sm'
+                selectable={false}
+              />
             ))}
-          </ul>
+          </div>
         ) : (
-          <p className='text-body-4 mt-2 text-gray-400'>아무도 없어요</p>
+          <p className='text-body-5 text-text-tertiary'>아무도 없어요</p>
         )}
       </section>
-      <section>
-        <h3 className='text-body-2 font-semibold text-gray-900'>
+      <section className='flex flex-col gap-2'>
+        <div className='text-body-5 flex items-center gap-0.5 text-orange-700'>
+          <Icon name='ic_circle_x_filled' size={16} />
           {slot.cannotCount}명이 못와요
-        </h3>
+        </div>
         {slot.cannotCount > 0 ? (
-          <ul className='text-body-4 mt-2 flex flex-wrap gap-x-3 gap-y-1 text-gray-500'>
+          <div className='flex flex-wrap gap-1.5'>
             {slot.cannotPeople.map((p) => (
-              <li key={p.id}>{p.name}</li>
+              <Chip
+                key={p.id}
+                text={p.name}
+                variant='fill'
+                size='sm'
+                selectable={false}
+              />
             ))}
-          </ul>
+          </div>
         ) : (
-          <p className='text-body-4 mt-2 text-gray-400'>모두 가능해요</p>
+          <p className='text-body-5 text-text-tertiary'>모두 가능해요</p>
         )}
       </section>
     </div>

@@ -23,6 +23,7 @@ export default function VoteRankCardList({
         <VoteRankCard
           key={slot.id}
           slot={slot}
+          totalVoters={result.totalVoters}
           isOpen={openIds.has(slot.id)}
           onToggle={onToggle}
         />
