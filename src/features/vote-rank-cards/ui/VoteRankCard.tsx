@@ -69,7 +69,7 @@ export default function VoteRankCard({
             size='md'
             className={cn(
               'text-text-tertiary transition-transform duration-200',
-              isOpen && 'rotate-180',
+              !isOpen && 'rotate-180',
             )}
           />
         </div>
