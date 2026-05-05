@@ -18,11 +18,11 @@ export default function RankChip({ rank }: RankChipProps) {
   return (
     <span
       className={cn(
-        'text-caption-7 inline-flex items-center justify-center rounded-[4px] px-2 py-[2px]',
+        'inline-flex items-center justify-center rounded-[4px] px-2 py-0.5 leading-none',
         RANK_CHIP_COLOR[rank],
       )}
     >
-      {rank}위
+      <span className='text-[11px] leading-4 tracking-[-0.02em]'>{rank}위</span>
     </span>
   );
 }
