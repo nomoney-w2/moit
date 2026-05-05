@@ -16,6 +16,24 @@ const baseCanPeople = [
   { id: '7', name: '예진공쥬' },
 ];
 
+const baseCannotPeople = [
+  { id: '8', name: '냐옹' },
+  { id: '9', name: '미투표자' },
+];
+
+function fillPeople(
+  base: { id: string; name: string }[],
+  count: number,
+  fillerPrefix: string,
+): { id: string; name: string }[] {
+  if (count <= base.length) return base.slice(0, count);
+  const padded = [...base];
+  for (let i = base.length; i < count; i += 1) {
+    padded.push({ id: `${fillerPrefix}-${i + 1}`, name: `참여자${i + 1}` });
+  }
+  return padded;
+}
+
 function makeSlot(
   rank: number | null,
   badgeGroup: RankBadgeGroup,
@@ -30,11 +48,8 @@ function makeSlot(
     endTime: '12:30',
     rank,
     badgeGroup,
-    canPeople: baseCanPeople.slice(0, canCount),
-    cannotPeople: [
-      { id: '8', name: '냐옹' },
-      { id: '9', name: '미투표자' },
-    ].slice(0, cannotCount),
+    canPeople: fillPeople(baseCanPeople, canCount, 'can'),
+    cannotPeople: fillPeople(baseCannotPeople, cannotCount, 'cannot'),
     canCount,
     cannotCount,
   };
