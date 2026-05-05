@@ -45,11 +45,11 @@ export default function VoteRankCard({
         onClick={() => onToggle(slot.id)}
         className='flex w-full items-center gap-3 px-5 py-4 text-left'
       >
-        <div className='flex flex-1 flex-col gap-[3px]'>
+        <div className='flex flex-1 flex-col gap-0.75'>
           <span className='text-body-4 text-text-secondary'>
             {formatDateLabel(slot.date)}
           </span>
-          <div className='flex items-center gap-[6px]'>
+          <div className='flex items-center gap-1.5'>
             <span className='text-title-7 text-gray-900'>
               {slot.startTime} - {slot.endTime}
             </span>
