@@ -48,6 +48,7 @@ const meta: Meta<typeof VoteRankCard> = {
   },
   args: {
     onToggle: () => {},
+    totalVoters: 9,
   },
 };
 
@@ -88,4 +89,12 @@ export const Open: Story = {
 
 export const OpenManyParticipants: Story = {
   args: { isOpen: true, slot: makeSlot(1, 'rank1', 7, 0) },
+};
+
+export const OpenAllAvailable: Story = {
+  args: { isOpen: true, slot: makeSlot(2, 'rank2-3', 9, 0) },
+};
+
+export const OpenNoneAvailable: Story = {
+  args: { isOpen: true, slot: makeSlot(null, 'none', 0, 9) },
 };
