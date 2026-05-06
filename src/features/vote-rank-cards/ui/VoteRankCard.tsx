@@ -4,12 +4,11 @@ import { format, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 import type {
+  RankBadgeGroup,
   RankedSlot,
   TimeSlotId,
 } from '@/features/vote-rank-cards/lib/types';
-import RankChip, {
-  type RankChipRank,
-} from '@/features/vote-rank-cards/ui/RankChip';
+import RankChip from '@/features/vote-rank-cards/ui/RankChip';
 import { cn } from '@/shared/lib/utils';
 import Chip from '@/shared/ui/chip/Chip';
 import Icon from '@/shared/ui/icon/Icon';
@@ -33,7 +32,7 @@ export default function VoteRankCard({
 }: VoteRankCardProps) {
   const headerId = `vote-rank-card-header-${slot.id}`;
   const panelId = `vote-rank-card-panel-${slot.id}`;
-  const hasBadge = slot.rank !== null && slot.rank >= 1 && slot.rank <= 5;
+  const hasBadge = slot.badgeGroup !== 'none';
 
   return (
     <li className='bg-gray-0 overflow-hidden rounded-lg border border-gray-200'>
@@ -53,7 +52,12 @@ export default function VoteRankCard({
             <span className='text-title-7 text-gray-900'>
               {slot.startTime} - {slot.endTime}
             </span>
-            {hasBadge ? <RankChip rank={slot.rank as RankChipRank} /> : null}
+            {hasBadge ? (
+              <RankChip
+                rank={slot.rank!}
+                badgeGroup={slot.badgeGroup as Exclude<RankBadgeGroup, 'none'>}
+              />
+            ) : null}
           </div>
         </div>
         <div className='flex shrink-0 items-center gap-1'>
