@@ -134,6 +134,18 @@ describe('rankSlots', () => {
     expect(result.every((r) => r.rank === 1)).toBe(true);
   });
 
+  it('동률 그룹 내 과거 날짜는 미래 날짜 뒤로 밀림', () => {
+    const slots = [
+      makeSlot('past', '2026-04-10', 0, 4),
+      makeSlot('future', '2026-04-17', 0, 4),
+    ];
+
+    const result = rankSlots(slots, TODAY);
+
+    expect(result.map((r) => r.id)).toEqual(['future', 'past']);
+    expect(result.every((r) => r.rank === 1)).toBe(true);
+  });
+
   it('5장 정확히 동률 - isAllTie여도 잘라내지 않음', () => {
     const slots = [
       makeSlot('a', '2026-04-17', 0, 3),
