@@ -29,7 +29,7 @@ export default function TopBar({
 }: TopBarProps) {
   return (
     <header
-      className={`bg-gray-0 relative flex h-14 w-full shrink-0 items-center justify-between px-1 ${
+      className={`bg-gray-0 relative flex h-14 w-full shrink-0 items-center justify-between border-b border-gray-100 px-1 ${
         className || ''
       }`}
       {...props}
