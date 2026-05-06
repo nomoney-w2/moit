@@ -6,7 +6,6 @@ import type { TimeSlotId } from '@/features/vote-rank-cards/lib/types';
 
 interface UseVoteRankCardToggleResult {
   openIds: Set<TimeSlotId>;
-  isOpen: (id: TimeSlotId) => boolean;
   toggle: (id: TimeSlotId) => void;
 }
 
@@ -22,7 +21,5 @@ export function useVoteRankCardToggle(): UseVoteRankCardToggleResult {
     });
   }, []);
 
-  const isOpen = useCallback((id: TimeSlotId) => openIds.has(id), [openIds]);
-
-  return { openIds, isOpen, toggle };
+  return { openIds, toggle };
 }
