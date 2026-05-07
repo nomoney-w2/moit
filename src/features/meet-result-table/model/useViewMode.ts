@@ -2,13 +2,13 @@
 
 import { useCallback, useState } from 'react';
 
-export type ViewMode = 'table' | 'calendar';
+export type ViewMode = 'table' | 'list';
 
 export function useViewMode(initial: ViewMode = 'table') {
   const [mode, setMode] = useState<ViewMode>(initial);
 
   const toggle = useCallback(() => {
-    setMode((prev) => (prev === 'table' ? 'calendar' : 'table'));
+    setMode((prev) => (prev === 'table' ? 'list' : 'table'));
   }, []);
 
   return { mode, toggle, setMode };

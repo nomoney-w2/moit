@@ -11,9 +11,11 @@ const badgeVariants = cva(
         default:
           'border-transparent bg-primary-default text-text-inverse hover:bg-primary-subtle',
         secondary: 'border-transparent bg-gray-100 text-gray-900',
-        rank1: 'border-primary-default bg-gray-0 text-primary-default',
-        rank2: 'border-primary-default bg-gray-0 text-primary-default', // Keep approximated until design provided
-        rank3: 'border-primary-default bg-gray-0 text-primary-default', // Keep approximated until design provided
+        rank1: 'border-transparent bg-primary-default text-gray-0',
+        rank2: 'border-transparent bg-primary-subtle text-gray-0',
+        rank3: 'border-transparent bg-primary-subtle text-gray-0',
+        rank4: 'border-transparent bg-gray-300 text-gray-700',
+        rank5: 'border-transparent bg-gray-300 text-gray-700',
         outline: 'text-text-primary',
         rank_outline:
           'border border-primary-default bg-gray-0 text-primary-default',

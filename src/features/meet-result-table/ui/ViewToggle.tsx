@@ -8,7 +8,7 @@ interface ViewToggleProps {
 }
 
 export default function ViewToggle({ mode, onToggle }: ViewToggleProps) {
-  const isCalendar = mode === 'calendar';
+  const isCalendar = mode === 'list';
 
   return (
     <button
