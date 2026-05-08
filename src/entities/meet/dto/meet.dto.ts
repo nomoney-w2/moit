@@ -51,12 +51,42 @@ export const checkParticipantExistResponseDto = z.object({
 });
 
 /**
+ * 시간 범위 + 슬롯 카운트 스키마 (모임 조회 응답용)
+ * - createMeetRequestDto.timeRange와 달리 slotCount 포함
+ * - 서버는 LocalTime 직렬화로 "HH:mm:ss" / "H:mm" 등 다양한 형태 응답 가능 → "HH:mm" 으로 정규화
+ */
+function normalizeTime(v: string): string {
+  const match = v.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return v;
+  return `${match[1].padStart(2, '0')}:${match[2]}`;
+}
+
+export const timeRangeWithSlotCountDto = z.object({
+  startTime: z.string().transform(normalizeTime),
+  endTime: z.string().transform(normalizeTime),
+  slotCount: z.number().int().min(1),
+});
+
+/**
+ * 모임 상태 enum
+ */
+export const meetingStatusEnum = z.enum(['VOTING', 'FINALIZED', 'CLOSED']);
+
+/**
  * 참여자 정보 스키마
  */
 export const participantDto = z.object({
   id: z.number(),
   name: z.string(),
-  voteDates: z.array(z.string()),
+  // 서버는 시간 범위 미설정 모임 또는 미투표 참여자에 대해 null을 반환할 수 있음 → 빈 배열로 정규화
+  voteDates: z
+    .array(z.string())
+    .nullable()
+    .transform((v) => v ?? []),
+  voteTimeSlots: z
+    .array(z.array(z.boolean()))
+    .nullable()
+    .transform((v) => v ?? []),
   hasVoted: z.boolean(),
 });
 
@@ -67,9 +97,12 @@ export const meetResponseDto = z.object({
   id: z.string(),
   title: z.string(),
   dates: z.array(z.string()),
+  status: meetingStatusEnum,
+  finalizedDate: z.string().nullable().optional(),
   maxParticipantCount: z.number().nullable(),
   participants: z.array(participantDto),
   hostName: z.string(),
+  timeRange: timeRangeWithSlotCountDto.nullable().optional(),
 });
 
 // ==================== TypeScript Types ====================
@@ -106,3 +139,13 @@ export type Participant = z.infer<typeof participantDto>;
  * 모임 조회 응답 타입
  */
 export type MeetResponse = z.infer<typeof meetResponseDto>;
+
+/**
+ * 시간 범위 + 슬롯 카운트 타입
+ */
+export type TimeRangeWithSlotCount = z.infer<typeof timeRangeWithSlotCountDto>;
+
+/**
+ * 모임 상태 타입
+ */
+export type MeetingStatus = z.infer<typeof meetingStatusEnum>;

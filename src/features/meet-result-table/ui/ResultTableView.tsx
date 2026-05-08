@@ -2,7 +2,7 @@
 
 import { type VoteTimeSlotStat } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
 
-import { type CardPosition, type SelectedCell } from '../model/useSelectedCell';
+import { type SelectedCell } from '../model/useSelectedCell';
 import { type ViewMode } from '../model/useViewMode';
 import CellInfoCard from './CellInfoCard';
 import HeatmapGrid from './HeatmapGrid';
@@ -14,13 +14,8 @@ interface ResultTableViewProps {
   mode: ViewMode;
   onToggle: () => void;
   selected: SelectedCell;
-  isExpanded: boolean;
-  position: CardPosition;
   onSelect: (date: string, slotIdx: number) => void;
   onClose: () => void;
-  onCollapse: () => void;
-  onExpand: () => void;
-  onMoveTo: (next: CardPosition) => void;
 }
 
 export default function ResultTableView({
@@ -29,13 +24,8 @@ export default function ResultTableView({
   mode,
   onToggle,
   selected,
-  isExpanded,
-  position,
   onSelect,
   onClose,
-  onCollapse,
-  onExpand,
-  onMoveTo,
 }: ResultTableViewProps) {
   return (
     <div className='mx-auto w-full max-w-screen-sm'>
@@ -49,12 +39,7 @@ export default function ResultTableView({
         <CellInfoCard
           slotStat={slotStat}
           selected={selected}
-          isExpanded={isExpanded}
-          position={position}
           onClose={onClose}
-          onCollapse={onCollapse}
-          onExpand={onExpand}
-          onMoveTo={onMoveTo}
         />
       </div>
     </div>

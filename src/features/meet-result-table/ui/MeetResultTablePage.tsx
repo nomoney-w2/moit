@@ -24,16 +24,7 @@ export default function MeetResultTablePage({
   snapshot,
 }: MeetResultTablePageProps) {
   const { mode, toggle } = useViewMode('table');
-  const {
-    selected,
-    isExpanded,
-    position,
-    select,
-    close,
-    collapse,
-    expand,
-    moveTo,
-  } = useSelectedCell();
+  const { selected, select, close } = useSelectedCell();
   const { openIds, toggle: cardToggle } = useVoteRankCardToggle();
   const result = useMemo(() => toRankedSlots(snapshot), [snapshot]);
   const voteCount = result.totalVoters;
@@ -46,13 +37,8 @@ export default function MeetResultTablePage({
         mode={mode}
         onToggle={toggle}
         selected={selected}
-        isExpanded={isExpanded}
-        position={position}
         onSelect={select}
         onClose={close}
-        onCollapse={collapse}
-        onExpand={expand}
-        onMoveTo={moveTo}
       />
     );
   }

@@ -47,9 +47,7 @@ export default function HeatmapCell({
       data-slot-idx={slotIdx}
       onClick={() => onSelect(date, slotIdx)}
       style={{ height }}
-      className={`box-border w-full cursor-pointer ${colorClass} ${
-        isSelected ? 'ring-2 ring-[#3C7EFA] ring-offset-1' : ''
-      }`}
+      className={`box-border w-full cursor-pointer ${colorClass}`}
     />
   );
 }

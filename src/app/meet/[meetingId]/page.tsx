@@ -1,12 +1,18 @@
+import { HTTPError } from 'ky';
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 import { getMeetingById } from '@/entities/meet/api/getMeetingById';
 import { type MeetResponse } from '@/entities/meet/dto/meet.dto';
-import { generateMockVoteTimeSlotStat } from '@/entities/voteTimeSlotStat/lib/mock';
+import { toMeetingVoteSnapshot } from '@/entities/meet/lib/toMeetingVoteSnapshot';
+import { buildVoteDateStat } from '@/entities/voteDateStat/lib/buildVoteDateStat';
+import { buildVoteTimeSlotStat } from '@/entities/voteTimeSlotStat/lib/buildVoteTimeSlotStat';
 import MeetResultTablePage from '@/features/meet-result-table/ui/MeetResultTablePage';
 import type { MeetingVoteSnapshot } from '@/features/vote-rank-cards/lib/types';
 import { BASE_URL } from '@/shared/config/constants';
 import { END_HOUR, START_HOUR, TOTAL_SLOTS } from '@/shared/config/timeSlot';
+import { Header } from '@/shared/ui/header/Header';
+import { VoteResultDataView } from '@/widgets/vote-result/ui/VoteResultDataView';
 
 import ParticipantHeader from './ParticipantHeader';
 import { VoteActionButtons } from './VoteActionButtons';
@@ -52,6 +58,13 @@ export async function generateMetadata({
   }
 }
 
+/**
+ * @deprecated [#73, 2026-05-07] 백엔드 API 연동으로 mock 시드 기반 snapshot 생성 불필요.
+ * Replacement: `toMeetingVoteSnapshot` (entities/meet/lib/) + `buildVoteTimeSlotStat` (entities/voteTimeSlotStat/lib/)
+ * Removal target: 별도 정리 PR (specs/feat/073-vote-rank-cards-api/plan.md TODO-9 참조).
+ *
+ * 아래의 `hashSeed`, `mulberry32`, `VISUAL_POOL_SIZE`, `VISUAL_NAMES`, `buildMockSnapshot` 모두 운영 코드 경로에서 호출 0개. 보존만.
+ */
 function hashSeed(input: string): number {
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
@@ -84,6 +97,11 @@ const VISUAL_NAMES = [
   '두쫀쿠',
 ];
 
+/**
+ * @deprecated [#73, 2026-05-07] mock 시드 snapshot 생성기.
+ * Replacement: `toMeetingVoteSnapshot` (entities/meet/lib/)
+ * Removal target: 별도 정리 PR.
+ */
 function buildMockSnapshot(meetingData: MeetResponse): MeetingVoteSnapshot {
   const sortedDates = [...meetingData.dates].sort();
   const rand = mulberry32(hashSeed(meetingData.id));
@@ -119,14 +137,57 @@ function buildMockSnapshot(meetingData: MeetResponse): MeetingVoteSnapshot {
 
 export default async function ResultPage({ params }: PageProps) {
   const { meetingId } = await params;
-  const meetingData = await getMeetingById(meetingId);
 
+  let meetingData: MeetResponse;
+  try {
+    meetingData = await getMeetingById(meetingId);
+  } catch (e) {
+    // 진짜 404 (모임 없음) 만 notFound() 처리.
+    // zod 검증 실패·5xx·네트워크 오류는 그대로 throw해서 error.tsx 가 reset CTA를 노출하도록 함.
+    if (e instanceof HTTPError && e.response.status === 404) {
+      notFound();
+    }
+    throw e;
+  }
+
+  const hasTimeRange = Boolean(meetingData.timeRange);
+
+  if (hasTimeRange) {
+    return (
+      <div className='min-h-screen-safe flex flex-col bg-white pt-14 pb-25'>
+        <div className='fixed top-0 right-0 left-0 z-50 mx-auto w-full max-w-screen-sm bg-white'>
+          <ParticipantHeader
+            title={`${meetingData.hostName}님이 초대한 ${meetingData.title}`}
+            url={`${BASE_URL}/meet/${meetingId}`}
+            className='bg-white'
+          />
+        </div>
+
+        <MeetResultTablePage
+          slotStat={buildVoteTimeSlotStat(meetingData)}
+          snapshot={toMeetingVoteSnapshot(meetingData)}
+        />
+
+        <VoteActionButtons meetingId={meetingId} />
+      </div>
+    );
+  }
+
+  // timeRange 없는 모임 → 2026-04-29 이전 화면 형태 그대로 복원
+  // (Header + VoteResultDataView 조립, bg-gray-50)
   const sortedDates = [...meetingData.dates].sort();
-  const slotStat = generateMockVoteTimeSlotStat(meetingId, sortedDates);
-  const snapshot = buildMockSnapshot(meetingData);
+  const openRange = {
+    start: sortedDates[0],
+    end: sortedDates[sortedDates.length - 1],
+  };
+  const participantNames = meetingData.participants.map((p) => p.name);
+  const koreaTime = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }),
+  );
+  const standardTime = `${koreaTime.getHours().toString().padStart(2, '0')}:${koreaTime.getMinutes().toString().padStart(2, '0')}`;
 
   return (
-    <div className='min-h-screen-safe flex flex-col bg-white pt-14 pb-25'>
+    <div className='min-h-screen-safe flex flex-col bg-gray-50 pt-14 pb-25'>
       <div className='fixed top-0 right-0 left-0 z-50 mx-auto w-full max-w-screen-sm bg-white'>
         <ParticipantHeader
           title={`${meetingData.hostName}님이 초대한 ${meetingData.title}`}
@@ -135,7 +196,16 @@ export default async function ResultPage({ params }: PageProps) {
         />
       </div>
 
-      <MeetResultTablePage slotStat={slotStat} snapshot={snapshot} />
+      <Header
+        voteCount={meetingData.participants.length}
+        standardTime={standardTime}
+      />
+
+      <VoteResultDataView
+        participantNames={participantNames}
+        openRange={openRange}
+        stats={buildVoteDateStat(meetingData)}
+      />
 
       <VoteActionButtons meetingId={meetingId} />
     </div>

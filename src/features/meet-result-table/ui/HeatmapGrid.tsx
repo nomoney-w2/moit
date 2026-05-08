@@ -67,7 +67,7 @@ export default function HeatmapGrid({
       role='grid'
       aria-rowcount={TOTAL_SLOTS + 1}
       aria-colcount={slotStat.dates.length + 1}
-      className='flex w-full overflow-auto px-5 pb-5'
+      className='flex w-full overflow-auto pb-5'
     >
       <div
         className='sticky left-0 z-20 shrink-0 bg-white'
