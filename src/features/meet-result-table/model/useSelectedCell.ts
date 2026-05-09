@@ -3,9 +3,14 @@
 import { useCallback, useState } from 'react';
 
 export type SelectedCell = { date: string; slotIdx: number } | null;
+export type CardPosition = 'top' | 'bottom';
+export type CollapsedSide = 'left' | 'right';
 
 export function useSelectedCell() {
   const [selected, setSelected] = useState<SelectedCell>(null);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [position, setPosition] = useState<CardPosition>('top');
+  const [collapsedSide, setCollapsedSide] = useState<CollapsedSide>('right');
 
   const select = useCallback((date: string, slotIdx: number) => {
     setSelected((prev) => {
@@ -14,15 +19,32 @@ export function useSelectedCell() {
       }
       return { date, slotIdx };
     });
+    setIsExpanded(true);
   }, []);
 
   const close = useCallback(() => {
     setSelected(null);
+    setIsExpanded(true);
+    setPosition('top');
+    setCollapsedSide('right');
   }, []);
+
+  const collapse = useCallback((side: CollapsedSide) => {
+    setCollapsedSide(side);
+    setIsExpanded(false);
+  }, []);
+  const expand = useCallback(() => setIsExpanded(true), []);
+  const moveTo = useCallback((next: CardPosition) => setPosition(next), []);
 
   return {
     selected,
+    isExpanded,
+    position,
+    collapsedSide,
     select,
     close,
+    collapse,
+    expand,
+    moveTo,
   };
 }

@@ -2,7 +2,11 @@
 
 import { type VoteTimeSlotStat } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
 
-import { type SelectedCell } from '../model/useSelectedCell';
+import {
+  type CardPosition,
+  type CollapsedSide,
+  type SelectedCell,
+} from '../model/useSelectedCell';
 import { type ViewMode } from '../model/useViewMode';
 import CellInfoCard from './CellInfoCard';
 import HeatmapGrid from './HeatmapGrid';
@@ -14,8 +18,14 @@ interface ResultTableViewProps {
   mode: ViewMode;
   onToggle: () => void;
   selected: SelectedCell;
+  isExpanded: boolean;
+  position: CardPosition;
+  collapsedSide: CollapsedSide;
   onSelect: (date: string, slotIdx: number) => void;
   onClose: () => void;
+  onCollapse: (side: CollapsedSide) => void;
+  onExpand: () => void;
+  onMoveTo: (position: CardPosition) => void;
 }
 
 export default function ResultTableView({
@@ -24,8 +34,14 @@ export default function ResultTableView({
   mode,
   onToggle,
   selected,
+  isExpanded,
+  position,
+  collapsedSide,
   onSelect,
   onClose,
+  onCollapse,
+  onExpand,
+  onMoveTo,
 }: ResultTableViewProps) {
   return (
     <div className='mx-auto w-full max-w-screen-sm'>
@@ -39,7 +55,13 @@ export default function ResultTableView({
         <CellInfoCard
           slotStat={slotStat}
           selected={selected}
+          isExpanded={isExpanded}
+          position={position}
+          collapsedSide={collapsedSide}
           onClose={onClose}
+          onCollapse={onCollapse}
+          onExpand={onExpand}
+          onMoveTo={onMoveTo}
         />
       </div>
     </div>

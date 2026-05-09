@@ -1,5 +1,6 @@
 'use client';
 
+import { isSameWeek } from 'date-fns';
 import { useMemo } from 'react';
 
 import {
@@ -19,6 +20,9 @@ const TIME_COL_W = 40;
 const DAY_HEADER_H = 56;
 const COL_GAP = 4;
 const ROW_GAP = 4;
+// 인접 컬럼이 서로 다른 ISO 주(월~일) 에 속할 때 일반 갭 위에 추가로 더하는 마진.
+// 시안 (Figma 3627:6155) 기준 토 → 월 같이 주가 바뀌는 경계에 시각 단서를 준다.
+const WEEK_GAP_EXTRA = 12;
 const GRID_PADDING_X = 20; // must match px-5 on grid wrapper
 const VISIBLE_COLS = 4.5; // 4 full + 0.5 cutoff cue (FR-021)
 const VISIBLE_GAPS = 4; // gaps between the visible columns
@@ -89,13 +93,26 @@ export default function HeatmapGrid({
       </div>
 
       <div className='flex' style={{ gap: COL_GAP }}>
-        {slotStat.dates.map((date) => {
+        {slotStat.dates.map((date, dateIndex) => {
           const { weekday, md } = formatDateHeader(date);
           const dow = parseDate(date).getDay();
           const isWeekend = dow === 0 || dow === 6;
+          const prevDate = dateIndex > 0 ? slotStat.dates[dateIndex - 1] : null;
+          const isWeekChange =
+            prevDate !== null &&
+            !isSameWeek(parseDate(prevDate), parseDate(date), {
+              weekStartsOn: 1,
+            });
 
           return (
-            <div key={date} className='shrink-0' style={{ width: COL_W }}>
+            <div
+              key={date}
+              className='shrink-0'
+              style={{
+                width: COL_W,
+                marginLeft: isWeekChange ? WEEK_GAP_EXTRA : undefined,
+              }}
+            >
               <div
                 role='columnheader'
                 style={{ height: DAY_HEADER_H }}
