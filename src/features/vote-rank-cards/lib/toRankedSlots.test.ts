@@ -130,7 +130,7 @@ describe('toRankedSlots', () => {
     expect(result.totalVoters).toBe(0);
   });
 
-  it('전원 동률 7슬롯 - isAllTie=true, slots.length=5', () => {
+  it('전원 동률 7슬롯 - 전체 노출, slots.length=7', () => {
     const dates = [
       '2026-04-17',
       '2026-04-18',
@@ -164,10 +164,9 @@ describe('toRankedSlots', () => {
 
     const result = toRankedSlots(snapshot, { today: TODAY });
 
-    expect(result.isAllTie).toBe(true);
-    expect(result.slots).toHaveLength(5);
+    expect(result.slots).toHaveLength(7);
     expect(result.slots.every((s) => s.rank === 1)).toBe(true);
-    expect(result.slots.map((s) => s.date)).toEqual(dates.slice(0, 5));
+    expect(result.slots.map((s) => s.date)).toEqual(dates);
   });
 
   it('badgeGroup 매핑 - 1→rank1, 2·3→rank2-3, 4·5→rank4-5, null→none', () => {
@@ -206,15 +205,12 @@ describe('toRankedSlots', () => {
 
     const result = toRankedSlots(snapshot, { today: TODAY });
 
-    expect(result.slots).toHaveLength(6);
+    expect(result.slots).toHaveLength(5);
     expect(result.slots[0].badgeGroup).toBe('rank1');
     expect(result.slots[1].badgeGroup).toBe('rank2-3');
     expect(result.slots[2].badgeGroup).toBe('rank2-3');
     expect(result.slots[3].badgeGroup).toBe('rank4-5');
     expect(result.slots[4].badgeGroup).toBe('rank4-5');
-    expect(result.slots[5].badgeGroup).toBe('none');
-    expect(result.slots[5].rank).toBeNull();
-    expect(result.slots[5].canCount).toBe(0);
   });
 
   it('슬롯 시간 계산 - 12:00~13:00, slotCount=2 → slot0 12:00-12:30, slot1 12:30-13:00', () => {
