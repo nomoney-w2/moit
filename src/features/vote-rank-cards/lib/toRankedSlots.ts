@@ -79,7 +79,6 @@ export function toRankedSlots(
       meetingTitle: snapshot.title,
       hostName: snapshot.hostName,
       isEmpty: true,
-      isAllTie: false,
     };
   }
 
@@ -153,15 +152,13 @@ export function toRankedSlots(
   );
 
   const ranked = rankSlots(slotCounts, today);
-  const positiveCounts = slotCounts.filter((s) => s.canCount > 0);
-  const uniqueCounts = new Set(positiveCounts.map((s) => s.canCount));
-  const isAllTie = uniqueCounts.size === 1 && positiveCounts.length > 1;
 
   const orderedSlots: RankedSlot[] = [];
   for (const meta of ranked) {
     if (!meta.visible) continue;
     const entry = slotMap.get(meta.id);
     if (!entry) continue;
+    if (entry.canCount === 0) continue;
     orderedSlots.push({
       ...entry.slot,
       rank: meta.rank,
@@ -174,7 +171,6 @@ export function toRankedSlots(
     totalVoters,
     meetingTitle: snapshot.title,
     hostName: snapshot.hostName,
-    isEmpty: false,
-    isAllTie,
+    isEmpty: orderedSlots.length === 0,
   };
 }

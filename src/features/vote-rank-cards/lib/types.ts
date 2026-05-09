@@ -62,5 +62,4 @@ export interface RankedListResult {
   meetingTitle: string;
   hostName: string;
   isEmpty: boolean;
-  isAllTie: boolean;
 }
