@@ -5,16 +5,10 @@ import { type PointerEvent as ReactPointerEvent, useRef } from 'react';
 
 import { type TimeRangeWithSlotCount } from '@/entities/meet/dto/meet.dto';
 import TimeSlotCell from '@/features/participant-register-time-slot/ui/TimeSlotCell';
-import {
-  END_HOUR,
-  SLOTS_PER_HOUR,
-  START_HOUR,
-  TOTAL_SLOTS,
-} from '@/shared/config/timeSlot';
 import { parseDate } from '@/shared/lib/date';
 
 const SLOT_H = 40;
-const HOUR_H = SLOT_H * SLOTS_PER_HOUR;
+const HOUR_H = SLOT_H * 2;
 const TIME_COL_W = 40;
 const DAY_HEADER_H = 56;
 const COL_GAP = 4;
@@ -24,7 +18,7 @@ const ROW_GAP = 4;
 const WEEK_GAP_EXTRA = 12;
 const GRID_PADDING_X = 20;
 // 컬럼 가시성 분기:
-// - 5개 이상: 4.5 컬럼만 노출 (우측 컷오프로 더 있음을 시사) — PR #71 결과 표와 동일
+// - 5개 이상: 4.5 컬럼만 노출 (우측 컷오프로 더 있음을 시사)
 // - 4개 이하: 화면 폭에 균등 분배 (가로 스크롤 없이 모두 보임)
 function buildColWidth(dateCount: number): string {
   if (dateCount >= 5) {
@@ -60,24 +54,8 @@ function timeToMinutes(t: string): number {
 }
 
 /**
- * Display 인덱스(9~21시 24슬롯, PR #71 결과 표와 동일 layout) 를 모임 timeRange 인덱스로 변환.
- * - timeRange 안에 들어가는 display slot → meeting slotIndex 반환
- * - timeRange 외 (모임 시간이 아닌 슬롯) → null (셀 disabled, 클릭 불가)
- */
-function displayToMeetingSlot(
-  displayIdx: number,
-  meetingStartMin: number,
-  meetingEndMin: number,
-): number | null {
-  const slotStartMin = START_HOUR * 60 + displayIdx * (60 / SLOTS_PER_HOUR);
-  if (slotStartMin < meetingStartMin) return null;
-  if (slotStartMin >= meetingEndMin) return null;
-  return (slotStartMin - meetingStartMin) / (60 / SLOTS_PER_HOUR);
-}
-
-/**
  * `clientX/clientY` 위치의 셀 좌표(`dateIndex`, `slotIndex`) 를 추출.
- * data attribute 로 셀을 식별. timeRange 외 disabled 셀은 data-disabled='true' 로 표시되며 null 반환.
+ * data attribute 로 셀을 식별. 셀 외 영역(헤더/시간 컬럼/패딩) 이면 null.
  */
 function getCellAtPoint(
   x: number,
@@ -90,7 +68,6 @@ function getCellAtPoint(
   if (!el) return null;
   const cellEl = el.closest('[data-date-index]') as HTMLElement | null;
   if (!cellEl) return null;
-  if (cellEl.dataset.disabled === 'true') return null;
   const dateIndex = Number(cellEl.dataset.dateIndex);
   const slotIndex = Number(cellEl.dataset.slotIndex);
   if (Number.isNaN(dateIndex) || Number.isNaN(slotIndex)) return null;
@@ -105,14 +82,44 @@ export default function TimeSlotGrid({
   updateDrag,
   endDrag,
 }: TimeSlotGridProps) {
-  const meetingStartMin = timeToMinutes(timeRange.startTime);
-  const meetingEndMin = timeToMinutes(timeRange.endTime);
+  // timeRange 의 startTime ~ endTime 만 표시.
+  // 1시간 = 2 슬롯 그룹으로 묶음.
+  const startMin = timeToMinutes(timeRange.startTime);
+  const startHour = Math.floor(startMin / 60);
+  const startHasHalfOffset = startMin % 60 === 30;
 
-  // 1시간 = 2 슬롯 그룹으로 묶음. PR #71 결과 표와 동일 layout (9~21 24슬롯 고정).
-  const hours = Array.from(
-    { length: END_HOUR - START_HOUR },
-    (_, i) => START_HOUR + i,
-  );
+  const endMin = timeToMinutes(timeRange.endTime);
+  const endHour = Math.ceil(endMin / 60);
+
+  // 시작이 30분 오프셋이면 첫 그룹은 한 슬롯만 (botSlot 만).
+  const groups: Array<{
+    hour: number;
+    topSlotIdx: number | null;
+    botSlotIdx: number | null;
+  }> = [];
+  let cursor = 0;
+  if (startHasHalfOffset) {
+    groups.push({
+      hour: startHour,
+      topSlotIdx: null,
+      botSlotIdx: cursor,
+    });
+    cursor += 1;
+  }
+  for (
+    let h = startHasHalfOffset ? startHour + 1 : startHour;
+    h < endHour;
+    h += 1
+  ) {
+    const top = cursor;
+    const bot = cursor + 1;
+    groups.push({
+      hour: h,
+      topSlotIdx: top,
+      botSlotIdx: bot < timeRange.slotCount ? bot : null,
+    });
+    cursor += 2;
+  }
 
   const colWidth = buildColWidth(dates.length);
 
@@ -152,7 +159,7 @@ export default function TimeSlotGrid({
   return (
     <div
       role='grid'
-      aria-rowcount={TOTAL_SLOTS + 1}
+      aria-rowcount={timeRange.slotCount + 1}
       aria-colcount={dates.length + 1}
       className='flex w-full touch-none overflow-auto pb-5'
       onPointerDown={handlePointerDown}
@@ -166,14 +173,14 @@ export default function TimeSlotGrid({
       >
         <div style={{ height: DAY_HEADER_H }} />
         <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-          {hours.map((hour) => (
+          {groups.map((group) => (
             <div
-              key={hour}
+              key={group.hour}
               role='rowheader'
               style={{ height: HOUR_H }}
               className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
             >
-              {hour}
+              {group.hour}
             </div>
           ))}
         </div>
@@ -218,54 +225,39 @@ export default function TimeSlotGrid({
               </div>
 
               <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-                {hours.map((_, hourIdx) => {
-                  const topDisplayIdx = hourIdx * SLOTS_PER_HOUR;
-                  const botDisplayIdx = hourIdx * SLOTS_PER_HOUR + 1;
-                  const topMeetingIdx = displayToMeetingSlot(
-                    topDisplayIdx,
-                    meetingStartMin,
-                    meetingEndMin,
-                  );
-                  const botMeetingIdx = displayToMeetingSlot(
-                    botDisplayIdx,
-                    meetingStartMin,
-                    meetingEndMin,
-                  );
-
-                  return (
+                {groups.map((group) => (
+                  <div
+                    key={`${date}-${group.hour}`}
+                    role='row'
+                    className='overflow-hidden rounded-[10px]'
+                    style={{ height: HOUR_H }}
+                  >
+                    {group.topSlotIdx !== null ? (
+                      <TimeSlotCell
+                        dateIndex={dateIndex}
+                        slotIndex={group.topSlotIdx}
+                        isSelected={isSelected(dateIndex, group.topSlotIdx)}
+                        height={SLOT_H}
+                      />
+                    ) : (
+                      <div style={{ height: SLOT_H }} />
+                    )}
                     <div
-                      key={`${date}-${hourIdx}`}
-                      role='row'
-                      className='overflow-hidden rounded-[10px]'
-                      style={{ height: HOUR_H }}
-                    >
+                      className='border-t border-dashed border-white/40'
+                      style={{ marginTop: -1 }}
+                    />
+                    {group.botSlotIdx !== null ? (
                       <TimeSlotCell
                         dateIndex={dateIndex}
-                        slotIndex={topMeetingIdx ?? -1}
-                        isSelected={
-                          topMeetingIdx !== null &&
-                          isSelected(dateIndex, topMeetingIdx)
-                        }
+                        slotIndex={group.botSlotIdx}
+                        isSelected={isSelected(dateIndex, group.botSlotIdx)}
                         height={SLOT_H}
-                        disabled={topMeetingIdx === null}
                       />
-                      <div
-                        className='border-t border-dashed border-white/40'
-                        style={{ marginTop: -1 }}
-                      />
-                      <TimeSlotCell
-                        dateIndex={dateIndex}
-                        slotIndex={botMeetingIdx ?? -1}
-                        isSelected={
-                          botMeetingIdx !== null &&
-                          isSelected(dateIndex, botMeetingIdx)
-                        }
-                        height={SLOT_H}
-                        disabled={botMeetingIdx === null}
-                      />
-                    </div>
-                  );
-                })}
+                    ) : (
+                      <div style={{ height: SLOT_H }} />
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           );

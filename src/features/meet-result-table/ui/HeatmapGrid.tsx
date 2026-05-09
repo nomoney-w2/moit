@@ -3,11 +3,11 @@
 import { isSameWeek } from 'date-fns';
 import { useMemo } from 'react';
 
+import { type TimeRangeWithSlotCount } from '@/entities/meet/dto/meet.dto';
 import {
   type TimeSlotCell,
   type VoteTimeSlotStat,
 } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
-import { END_HOUR, START_HOUR, TOTAL_SLOTS } from '@/shared/config/timeSlot';
 import { parseDate } from '@/shared/lib/date';
 
 import { computeHeatmapIntensity } from '../lib/computeHeatmapIntensity';
@@ -37,14 +37,21 @@ function formatDateHeader(dateStr: string): { weekday: string; md: string } {
   return { weekday: WEEK_KO[d.getDay()], md: `${month}.${day}` };
 }
 
+function timeToMinutes(t: string): number {
+  const [hh, mm] = t.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
 interface HeatmapGridProps {
   slotStat: VoteTimeSlotStat;
+  timeRange: TimeRangeWithSlotCount;
   selected: { date: string; slotIdx: number } | null;
   onSelect: (date: string, slotIdx: number) => void;
 }
 
 export default function HeatmapGrid({
   slotStat,
+  timeRange,
   selected,
   onSelect,
 }: HeatmapGridProps) {
@@ -61,15 +68,45 @@ export default function HeatmapGrid({
     return map;
   }, [slotStat.cells]);
 
-  const hours = Array.from(
-    { length: END_HOUR - START_HOUR },
-    (_, i) => START_HOUR + i,
-  );
+  // timeRange 의 startTime ~ endTime 만 표시.
+  // 1시간 = 2 슬롯 그룹. 시작이 30분 오프셋이면 첫 그룹은 botSlot 만.
+  const startMin = timeToMinutes(timeRange.startTime);
+  const startHour = Math.floor(startMin / 60);
+  const startHasHalfOffset = startMin % 60 === 30;
+  const endMin = timeToMinutes(timeRange.endTime);
+  const endHour = Math.ceil(endMin / 60);
+
+  const groups: Array<{
+    hour: number;
+    topSlotIdx: number | null;
+    botSlotIdx: number | null;
+  }> = [];
+  {
+    let cursor = 0;
+    if (startHasHalfOffset) {
+      groups.push({ hour: startHour, topSlotIdx: null, botSlotIdx: cursor });
+      cursor += 1;
+    }
+    for (
+      let h = startHasHalfOffset ? startHour + 1 : startHour;
+      h < endHour;
+      h += 1
+    ) {
+      const top = cursor;
+      const bot = cursor + 1;
+      groups.push({
+        hour: h,
+        topSlotIdx: top,
+        botSlotIdx: bot < timeRange.slotCount ? bot : null,
+      });
+      cursor += 2;
+    }
+  }
 
   return (
     <div
       role='grid'
-      aria-rowcount={TOTAL_SLOTS + 1}
+      aria-rowcount={timeRange.slotCount + 1}
       aria-colcount={slotStat.dates.length + 1}
       className='flex w-full overflow-auto pb-5'
     >
@@ -79,14 +116,14 @@ export default function HeatmapGrid({
       >
         <div style={{ height: DAY_HEADER_H }} />
         <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-          {hours.map((hour) => (
+          {groups.map((group) => (
             <div
-              key={hour}
+              key={group.hour}
               role='rowheader'
               style={{ height: HOUR_H }}
               className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
             >
-              {hour}
+              {group.hour}
             </div>
           ))}
         </div>
@@ -131,35 +168,43 @@ export default function HeatmapGrid({
               </div>
 
               <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-                {hours.map((_, hourIdx) => {
-                  const topSlotIdx = hourIdx * 2;
-                  const botSlotIdx = hourIdx * 2 + 1;
-                  const topKey = cellKey(date, topSlotIdx);
-                  const botKey = cellKey(date, botSlotIdx);
-                  const topCell = cellByKey.get(topKey);
-                  const botCell = cellByKey.get(botKey);
-                  const topIntensity = intensityMap.get(topKey) ?? null;
-                  const botIntensity = intensityMap.get(botKey) ?? null;
+                {groups.map((group) => {
+                  const topSlotIdx = group.topSlotIdx;
+                  const botSlotIdx = group.botSlotIdx;
+                  const topKey =
+                    topSlotIdx !== null ? cellKey(date, topSlotIdx) : null;
+                  const botKey =
+                    botSlotIdx !== null ? cellKey(date, botSlotIdx) : null;
+                  const topCell = topKey ? cellByKey.get(topKey) : undefined;
+                  const botCell = botKey ? cellByKey.get(botKey) : undefined;
+                  const topIntensity =
+                    topKey !== null ? (intensityMap.get(topKey) ?? null) : null;
+                  const botIntensity =
+                    botKey !== null ? (intensityMap.get(botKey) ?? null) : null;
 
                   return (
                     <div
-                      key={hourIdx}
+                      key={`${date}-${group.hour}`}
                       role='row'
                       className='overflow-hidden rounded-[10px]'
                       style={{ height: HOUR_H }}
                     >
-                      <HeatmapCell
-                        date={date}
-                        slotIdx={topSlotIdx}
-                        intensity={topIntensity}
-                        count={topCell?.count ?? 0}
-                        height={SLOT_H}
-                        onSelect={onSelect}
-                        isSelected={
-                          selected?.date === date &&
-                          selected?.slotIdx === topSlotIdx
-                        }
-                      />
+                      {topSlotIdx !== null ? (
+                        <HeatmapCell
+                          date={date}
+                          slotIdx={topSlotIdx}
+                          intensity={topIntensity}
+                          count={topCell?.count ?? 0}
+                          height={SLOT_H}
+                          onSelect={onSelect}
+                          isSelected={
+                            selected?.date === date &&
+                            selected?.slotIdx === topSlotIdx
+                          }
+                        />
+                      ) : (
+                        <div style={{ height: SLOT_H }} />
+                      )}
                       <div
                         className='border-t border-dashed border-white/40'
                         style={{
@@ -167,18 +212,22 @@ export default function HeatmapGrid({
                           opacity: botIntensity !== null ? 1 : 0,
                         }}
                       />
-                      <HeatmapCell
-                        date={date}
-                        slotIdx={botSlotIdx}
-                        intensity={botIntensity}
-                        count={botCell?.count ?? 0}
-                        height={SLOT_H}
-                        onSelect={onSelect}
-                        isSelected={
-                          selected?.date === date &&
-                          selected?.slotIdx === botSlotIdx
-                        }
-                      />
+                      {botSlotIdx !== null ? (
+                        <HeatmapCell
+                          date={date}
+                          slotIdx={botSlotIdx}
+                          intensity={botIntensity}
+                          count={botCell?.count ?? 0}
+                          height={SLOT_H}
+                          onSelect={onSelect}
+                          isSelected={
+                            selected?.date === date &&
+                            selected?.slotIdx === botSlotIdx
+                          }
+                        />
+                      ) : (
+                        <div style={{ height: SLOT_H }} />
+                      )}
                     </div>
                   );
                 })}

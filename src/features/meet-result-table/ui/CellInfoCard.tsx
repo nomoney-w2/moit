@@ -6,8 +6,8 @@ import {
   useState,
 } from 'react';
 
+import { type TimeRangeWithSlotCount } from '@/entities/meet/dto/meet.dto';
 import { type VoteTimeSlotStat } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
-import { SLOTS_PER_HOUR, START_HOUR } from '@/shared/config/timeSlot';
 import { parseDate } from '@/shared/lib/date';
 import Chip from '@/shared/ui/chip/Chip';
 import Icon from '@/shared/ui/icon/Icon';
@@ -36,9 +36,18 @@ function formatDate(dateStr: string): string {
   return `${month}월 ${day}일 ${weekday}요일`;
 }
 
-function formatSlotRange(slotIdx: number): string {
-  const startMin = START_HOUR * 60 + slotIdx * (60 / SLOTS_PER_HOUR);
-  const endMin = startMin + 60 / SLOTS_PER_HOUR;
+function timeToMinutes(t: string): number {
+  const [hh, mm] = t.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
+/**
+ * 모임 timeRange.startTime 을 기준으로 slotIdx 의 30분 슬롯 시각 범위(`HH:mm - HH:mm`) 계산.
+ */
+function formatSlotRange(slotIdx: number, timeRangeStart: string): string {
+  const baseMin = timeToMinutes(timeRangeStart);
+  const startMin = baseMin + slotIdx * 30;
+  const endMin = startMin + 30;
   const fmt = (m: number) => {
     const h = Math.floor(m / 60);
     const mm = m % 60;
@@ -49,6 +58,7 @@ function formatSlotRange(slotIdx: number): string {
 
 interface CellInfoCardProps {
   slotStat: VoteTimeSlotStat;
+  timeRange: TimeRangeWithSlotCount;
   selected: SelectedCell;
   isExpanded: boolean;
   position: CardPosition;
@@ -61,6 +71,7 @@ interface CellInfoCardProps {
 
 export default function CellInfoCard({
   slotStat,
+  timeRange,
   selected,
   isExpanded,
   position,
@@ -190,7 +201,8 @@ export default function CellInfoCard({
           </span>
         )}
         <span className='text-text-primary flex-1 text-[15px] font-bold'>
-          {formatDate(selected.date)} {formatSlotRange(selected.slotIdx)}
+          {formatDate(selected.date)}{' '}
+          {formatSlotRange(selected.slotIdx, timeRange.startTime)}
         </span>
         <button
           type='button'

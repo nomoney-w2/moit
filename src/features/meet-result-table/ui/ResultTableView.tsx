@@ -1,5 +1,6 @@
 'use client';
 
+import { type TimeRangeWithSlotCount } from '@/entities/meet/dto/meet.dto';
 import { type VoteTimeSlotStat } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
 
 import {
@@ -14,6 +15,7 @@ import ResultCountBar from './ResultCountBar';
 
 interface ResultTableViewProps {
   slotStat: VoteTimeSlotStat;
+  timeRange: TimeRangeWithSlotCount;
   voteCount: number;
   mode: ViewMode;
   onToggle: () => void;
@@ -30,6 +32,7 @@ interface ResultTableViewProps {
 
 export default function ResultTableView({
   slotStat,
+  timeRange,
   voteCount,
   mode,
   onToggle,
@@ -49,11 +52,13 @@ export default function ResultTableView({
       <div className='@container relative'>
         <HeatmapGrid
           slotStat={slotStat}
+          timeRange={timeRange}
           selected={selected}
           onSelect={onSelect}
         />
         <CellInfoCard
           slotStat={slotStat}
+          timeRange={timeRange}
           selected={selected}
           isExpanded={isExpanded}
           position={position}

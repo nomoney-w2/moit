@@ -43,6 +43,7 @@ export default function MeetResultTablePage({
     return (
       <ResultTableView
         slotStat={slotStat}
+        timeRange={snapshot.timeRange}
         voteCount={voteCount}
         mode={mode}
         onToggle={toggle}
