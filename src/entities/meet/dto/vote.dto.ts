@@ -4,11 +4,14 @@ import { z } from 'zod';
 
 /**
  * 투표 생성/수정 요청 스키마
+ * - voteTimeSlots: 시간 모임 투표용. 차원: dates.length × slotCount.
+ *   날짜 단위 모임에서는 미포함 (undefined).
  */
 export const voteRequestDto = z.object({
   meetingId: z.string(),
   name: z.string(),
   voteDates: z.array(z.string()),
+  voteTimeSlots: z.array(z.array(z.boolean())).optional(),
 });
 
 /**

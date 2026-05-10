@@ -6,21 +6,26 @@ import {
   useState,
 } from 'react';
 
+import { type TimeRangeWithSlotCount } from '@/entities/meet/dto/meet.dto';
 import { type VoteTimeSlotStat } from '@/entities/voteTimeSlotStat/dto/voteTimeSlotStat.dto';
-import { SLOTS_PER_HOUR, START_HOUR } from '@/shared/config/timeSlot';
 import { parseDate } from '@/shared/lib/date';
 import Chip from '@/shared/ui/chip/Chip';
+import Icon from '@/shared/ui/icon/Icon';
 
 import { computeHeatmapIntensity } from '../lib/computeHeatmapIntensity';
 import { cellKey } from '../lib/slotKey';
 import { rankFromOpacity } from '../lib/timeSlotConstants';
-import { type CardPosition, type SelectedCell } from '../model/useSelectedCell';
+import {
+  type CardPosition,
+  type CollapsedSide,
+  type SelectedCell,
+} from '../model/useSelectedCell';
 
 const WEEK_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const COLLAPSE_THRESHOLD_PX = 100;
 const SNAP_THRESHOLD_PX = 80;
-const SCREEN_SM_PX = 640; // matches max-w-screen-sm wrapper in ResultTableView
-const CARD_INSET_X_PX = 12; // matches inset-x-3
+const SCREEN_SM_PX = 640;
+const CARD_INSET_X_PX = 12;
 const CARD_MAX_W_PX = SCREEN_SM_PX - CARD_INSET_X_PX * 2;
 
 function formatDate(dateStr: string): string {
@@ -31,9 +36,18 @@ function formatDate(dateStr: string): string {
   return `${month}월 ${day}일 ${weekday}요일`;
 }
 
-function formatSlotRange(slotIdx: number): string {
-  const startMin = START_HOUR * 60 + slotIdx * (60 / SLOTS_PER_HOUR);
-  const endMin = startMin + 60 / SLOTS_PER_HOUR;
+function timeToMinutes(t: string): number {
+  const [hh, mm] = t.split(':').map(Number);
+  return hh * 60 + mm;
+}
+
+/**
+ * 모임 timeRange.startTime 을 기준으로 slotIdx 의 30분 슬롯 시각 범위(`HH:mm - HH:mm`) 계산.
+ */
+function formatSlotRange(slotIdx: number, timeRangeStart: string): string {
+  const baseMin = timeToMinutes(timeRangeStart);
+  const startMin = baseMin + slotIdx * 30;
+  const endMin = startMin + 30;
   const fmt = (m: number) => {
     const h = Math.floor(m / 60);
     const mm = m % 60;
@@ -44,20 +58,24 @@ function formatSlotRange(slotIdx: number): string {
 
 interface CellInfoCardProps {
   slotStat: VoteTimeSlotStat;
+  timeRange: TimeRangeWithSlotCount;
   selected: SelectedCell;
   isExpanded: boolean;
   position: CardPosition;
+  collapsedSide: CollapsedSide;
   onClose: () => void;
-  onCollapse: () => void;
+  onCollapse: (side: CollapsedSide) => void;
   onExpand: () => void;
   onMoveTo: (position: CardPosition) => void;
 }
 
 export default function CellInfoCard({
   slotStat,
+  timeRange,
   selected,
   isExpanded,
   position,
+  collapsedSide,
   onClose,
   onCollapse,
   onExpand,
@@ -68,18 +86,29 @@ export default function CellInfoCard({
 
   if (!selected) return null;
 
+  // 수납된 상태 — 마지막 throw 방향 (좌/우) 화면 끝에 작은 화살표 버튼만 노출.
   if (!isExpanded) {
+    const sideStyle =
+      collapsedSide === 'right'
+        ? { right: `max(0px, calc(50vw - ${SCREEN_SM_PX / 2}px))` }
+        : { left: `max(0px, calc(50vw - ${SCREEN_SM_PX / 2}px))` };
+    const sideRoundedClass =
+      collapsedSide === 'right' ? 'rounded-l-xl' : 'rounded-r-xl';
+    // 우측 수납이면 화살표가 좌측 향함 (`<`), 좌측 수납이면 우측 향함 (`>`).
+    const arrowPath =
+      collapsedSide === 'right' ? 'M9 3L5 7l4 4' : 'M5 3l4 4-4 4';
+
     return (
       <button
         type='button'
         aria-label='카드 펼치기'
         onClick={onExpand}
-        style={{ right: `max(0px, calc(50vw - ${SCREEN_SM_PX / 2}px))` }}
-        className='fixed top-1/2 z-60 flex h-20 w-7 -translate-y-1/2 items-center justify-center rounded-l-xl bg-gray-700/80 text-white shadow-md backdrop-blur-sm'
+        style={sideStyle}
+        className={`fixed top-1/2 z-60 flex h-20 w-7 -translate-y-1/2 items-center justify-center bg-gray-700/80 text-white shadow-md backdrop-blur-sm ${sideRoundedClass}`}
       >
         <svg width='14' height='14' viewBox='0 0 14 14' fill='none' aria-hidden>
           <path
-            d='M9 3L5 7l4 4'
+            d={arrowPath}
             stroke='currentColor'
             strokeWidth='1.6'
             strokeLinecap='round'
@@ -108,30 +137,29 @@ export default function CellInfoCard({
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {
-      // synthetic 이벤트나 pointerId 미지원 환경 — capture 없이도 동작
+      // synthetic event 또는 미지원 환경 — capture 없이도 동작
     }
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!dragStartRef.current) return;
     setDrag({
-      x: Math.max(0, e.clientX - dragStartRef.current.x),
+      x: e.clientX - dragStartRef.current.x,
       y: e.clientY - dragStartRef.current.y,
     });
   };
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!dragStartRef.current) return;
-    const dx = Math.max(0, e.clientX - dragStartRef.current.x);
+    const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
     dragStartRef.current = null;
     setDrag({ x: 0, y: 0 });
 
-    // 우측 끝까지 이동 → 수납 우선
-    if (dx > COLLAPSE_THRESHOLD_PX) {
-      onCollapse();
+    // 좌·우 throw 가 임계 넘으면 수납 (위/아래 스냅보다 우선)
+    if (Math.abs(dx) > COLLAPSE_THRESHOLD_PX) {
+      onCollapse(dx > 0 ? 'right' : 'left');
     } else if (Math.abs(dy) > SNAP_THRESHOLD_PX) {
-      // 상단↔하단 스냅
       if (dy > 0 && position === 'top') onMoveTo('bottom');
       else if (dy < 0 && position === 'bottom') onMoveTo('top');
     }
@@ -173,7 +201,8 @@ export default function CellInfoCard({
           </span>
         )}
         <span className='text-text-primary flex-1 text-[15px] font-bold'>
-          {formatDate(selected.date)} {formatSlotRange(selected.slotIdx)}
+          {formatDate(selected.date)}{' '}
+          {formatSlotRange(selected.slotIdx, timeRange.startTime)}
         </span>
         <button
           type='button'
@@ -195,17 +224,13 @@ export default function CellInfoCard({
 
       <hr className='my-3 border-gray-100' />
 
-      <div className='flex items-center gap-1.5'>
-        <span className='bg-primary-default inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] text-white'>
-          ✓
-        </span>
-        <span className='text-primary-default text-[13px] font-semibold'>
-          가능한 사람
-        </span>
+      <div className='text-primary-default flex items-center gap-1'>
+        <Icon name='ic_circle_check_filled' size={16} />
+        <span className='text-[13px] font-semibold'>가능한 사람</span>
       </div>
       <div className='mt-2 flex flex-wrap gap-1.5'>
         {canPeople.length === 0 ? (
-          <span className='text-text-tertiary text-[13px]'>없음</span>
+          <span className='text-text-tertiary text-[13px]'>아무도 없어요</span>
         ) : (
           canPeople.map((p) => (
             <Chip
@@ -219,17 +244,13 @@ export default function CellInfoCard({
         )}
       </div>
 
-      <div className='mt-3 flex items-center gap-1.5'>
-        <span className='inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-400 text-[10px] text-white'>
-          ✕
-        </span>
-        <span className='text-[13px] font-semibold text-orange-500'>
-          안되는 사람
-        </span>
+      <div className='mt-3 flex items-center gap-1 text-orange-500'>
+        <Icon name='ic_circle_x_filled' size={16} />
+        <span className='text-[13px] font-semibold'>안되는 사람</span>
       </div>
       <div className='mt-2 flex flex-wrap gap-1.5'>
         {cannotPeople.length === 0 ? (
-          <span className='text-text-tertiary text-[13px]'>없음</span>
+          <span className='text-text-tertiary text-[13px]'>모두 가능해요</span>
         ) : (
           cannotPeople.map((p) => (
             <Chip

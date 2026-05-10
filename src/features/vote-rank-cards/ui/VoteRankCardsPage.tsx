@@ -1,3 +1,8 @@
+/**
+ * @deprecated [#73, 2026-05-07] 운영 결과 페이지는 `MeetResultTablePage`(meet-result-table feature) 가 토글로 표/카드 뷰를 모두 처리. 본 standalone 페이지는 `/test/vote-rank-cards` 만 사용.
+ * Replacement: `MeetResultTablePage`
+ * Removal target: test 라우트와 함께 별도 정리 PR.
+ */
 'use client';
 
 import { useMemo } from 'react';

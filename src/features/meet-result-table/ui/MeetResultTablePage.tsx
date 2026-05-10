@@ -28,6 +28,7 @@ export default function MeetResultTablePage({
     selected,
     isExpanded,
     position,
+    collapsedSide,
     select,
     close,
     collapse,
@@ -42,12 +43,14 @@ export default function MeetResultTablePage({
     return (
       <ResultTableView
         slotStat={slotStat}
+        timeRange={snapshot.timeRange}
         voteCount={voteCount}
         mode={mode}
         onToggle={toggle}
         selected={selected}
         isExpanded={isExpanded}
         position={position}
+        collapsedSide={collapsedSide}
         onSelect={select}
         onClose={close}
         onCollapse={collapse}

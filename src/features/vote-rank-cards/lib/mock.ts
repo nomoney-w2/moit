@@ -1,3 +1,8 @@
+/**
+ * @deprecated [#73, 2026-05-07] 본 파일의 mock fixtures는 운영 라우트(`/meet/[meetingId]`)가 실 API 어댑터(`toMeetingVoteSnapshot`)로 전환되며 운영 사용처 0개.
+ * 현재 사용처: `/test/vote-rank-cards`(개발용 라우트), Storybook stories.
+ * Removal target: test 라우트와 함께 별도 정리 PR (specs/feat/073-vote-rank-cards-api/plan.md TODO-9 참조).
+ */
 import type {
   MeetingVoteSnapshot,
   ParticipantVote,

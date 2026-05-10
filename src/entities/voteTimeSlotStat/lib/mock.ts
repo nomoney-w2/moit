@@ -41,6 +41,11 @@ const VISUAL_NAMES = [
   '두쫀쿠',
 ];
 
+/**
+ * @deprecated [#73, 2026-05-07] mock 시드 기반 시간대 집계 생성기. 운영 라우트는 `buildVoteTimeSlotStat` 사용.
+ * Replacement: `buildVoteTimeSlotStat` (entities/voteTimeSlotStat/lib/) — `MeetResponse` 입력으로 실 데이터 집계.
+ * Removal target: 별도 정리 PR (specs/feat/073-vote-rank-cards-api/plan.md TODO-9 참조).
+ */
 export function generateMockVoteTimeSlotStat(
   meetingId: string,
   dates: string[],
