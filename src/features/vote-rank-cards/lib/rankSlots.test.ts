@@ -42,7 +42,7 @@ describe('rankSlots', () => {
     expect(result.every((r) => r.visible)).toBe(true);
   });
 
-  it('공동 2위 2개 - 다음 슬롯은 4위 (3위 스킵)', () => {
+  it('공동 2위 2개 - 다음 그룹은 3위 (밀집 순위)', () => {
     const slots = [
       makeSlot('a', '2026-04-17', 0, 7),
       makeSlot('b', '2026-04-17', 1, 5),
@@ -55,7 +55,7 @@ describe('rankSlots', () => {
     expect(result.find((r) => r.id === 'a')?.rank).toBe(1);
     expect(result.find((r) => r.id === 'b')?.rank).toBe(2);
     expect(result.find((r) => r.id === 'c')?.rank).toBe(2);
-    expect(result.find((r) => r.id === 'd')?.rank).toBe(4);
+    expect(result.find((r) => r.id === 'd')?.rank).toBe(3);
   });
 
   it('모든 슬롯 0표 - 전부 rank=null, visible=true', () => {
@@ -72,7 +72,7 @@ describe('rankSlots', () => {
     expect(result.every((r) => r.visible)).toBe(true);
   });
 
-  it('전원 동률 7슬롯 - 임박한 5장만 visible, rank=1', () => {
+  it('전원 동률 7슬롯 - 전체 visible, 모두 rank=1', () => {
     const slots = [
       makeSlot('a', '2026-04-17', 0, 4),
       makeSlot('b', '2026-04-18', 0, 4),
@@ -85,15 +85,9 @@ describe('rankSlots', () => {
 
     const result = rankSlots(slots, TODAY);
 
-    const visibleIds = result.filter((r) => r.visible).map((r) => r.id);
-    expect(visibleIds).toEqual(['a', 'b', 'c', 'd', 'e']);
-    expect(result.filter((r) => r.visible).every((r) => r.rank === 1)).toBe(
-      true,
-    );
-    expect(result.filter((r) => !r.visible).map((r) => r.id)).toEqual([
-      'f',
-      'g',
-    ]);
+    expect(result).toHaveLength(7);
+    expect(result.every((r) => r.visible)).toBe(true);
+    expect(result.every((r) => r.rank === 1)).toBe(true);
   });
 
   it('0표 슬롯 섞인 케이스 - 1표 이상이 먼저 정렬되고 0표는 뒤에 visible=true·rank=null', () => {

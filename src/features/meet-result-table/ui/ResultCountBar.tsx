@@ -16,10 +16,16 @@ export default function ResultCountBar({
 }: ResultCountBarProps) {
   return (
     <div className='flex items-center justify-between px-5 pt-6 pb-3'>
-      <div className='text-headline-5 text-text-primary'>
-        <span className='text-primary-default font-bold'>{voteCount}</span>
-        <span>명이 투표했어요</span>
-      </div>
+      {voteCount === 0 ? (
+        <p className='text-headline-5 text-text-primary font-bold'>
+          아직 투표한 사람이 없어요!
+        </p>
+      ) : (
+        <div className='text-headline-5 text-text-primary'>
+          <span className='text-primary-default font-bold'>{voteCount}</span>
+          <span>명이 투표했어요</span>
+        </div>
+      )}
       <ViewToggle mode={mode} onToggle={onToggle} />
     </div>
   );
