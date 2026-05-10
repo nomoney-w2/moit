@@ -1,4 +1,10 @@
-import { ComponentProps, KeyboardEvent, useId, useState } from 'react';
+import {
+  ComponentProps,
+  FocusEvent,
+  KeyboardEvent,
+  useId,
+  useState,
+} from 'react';
 
 import Icon from '@/shared/ui/icon/Icon';
 
@@ -51,6 +57,8 @@ export default function Input({
   onClear,
   onChange,
   onKeyDown,
+  onFocus,
+  onBlur,
   suppressHydrationWarning,
   ...props
 }: InputProps) {
@@ -65,6 +73,11 @@ export default function Input({
     if (defaultValue !== undefined) return String(defaultValue).length;
     return 0;
   });
+
+  // 포커스 상태 (X 버튼 노출 조건에 사용 — "편집 중일 때만 지우개 노출")
+  // autoFocus 가 마운트 시 native focus 만 트리거하고 React synthetic onFocus 가 누락되는
+  // 케이스(React 19 + 일부 환경)를 보완하기 위해, autoFocus prop 으로 초기값을 설정한다.
+  const [isFocused, setIsFocused] = useState(!!props.autoFocus);
 
   // 입력 변경 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +100,16 @@ export default function Input({
       handleClear();
     }
     onKeyDown?.(e);
+  };
+
+  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+    setIsFocused(false);
+    onBlur?.(e);
   };
 
   // value가 controlled로 넘어오면 해당 길이 사용, 아니면 내부 상태 사용
@@ -114,10 +137,13 @@ export default function Input({
     .filter(Boolean)
     .join(' ');
 
+  // X 버튼은 "포커스 + 값 있음" 일 때만 노출 (편집 문맥에서만 지우개 노출)
+  const showClearButton =
+    isFocused && hasValue && !props.disabled && !props.readOnly;
+
   // 우측 아이콘 공간 확보 (padding-right)
   // X버튼만 내부에 존재 (약 40px)
-  const rightPadding =
-    hasValue && !props.disabled && !props.readOnly ? '40px' : '16px';
+  const rightPadding = showClearButton ? '40px' : '16px';
 
   return (
     <div className={containerClasses}>
@@ -147,16 +173,19 @@ export default function Input({
           maxLength={maxLength}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           style={{ paddingRight: rightPadding }}
           suppressHydrationWarning={suppressHydrationWarning}
           {...props}
         />
 
-        {/* X Button (Only inside input) */}
-        {hasValue && !props.disabled && !props.readOnly && (
+        {/* X Button (Only inside input) - 포커스 + 값이 있을 때만 노출 */}
+        {showClearButton && (
           <div className='input-right-element'>
             <div
               className='input-clear-button'
+              onMouseDown={(e) => e.preventDefault()}
               onClick={handleClear}
               role='button'
               tabIndex={-1}

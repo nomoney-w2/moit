@@ -5,13 +5,30 @@ import { useState } from 'react';
 
 import { createMeeting } from '@/entities/meet/api/createMeeting';
 import { updateVote } from '@/entities/meet/api/updateVote';
+import type { TimeRangePayload } from '@/entities/meet/dto/meet.dto';
 import { trackEvent } from '@/shared/lib/amplitude';
+
+/** "HH:mm" → 자정으로부터의 분 */
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** timeRange 의 30분 단위 슬롯 수 (모임 생성 시 30분 단위 강제이므로 정수). */
+function calcSlotCount(timeRange: TimeRangePayload): number {
+  return (
+    (timeToMinutes(timeRange.endTime) - timeToMinutes(timeRange.startTime)) / 30
+  );
+}
 
 export function useDateSelect(hostName: string, meetingName: string) {
   const router = useRouter();
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [createdMeetingId, setCreatedMeetingId] = useState<string | null>(null);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [createdTimeRange, setCreatedTimeRange] = useState<
+    TimeRangePayload | undefined
+  >(undefined);
 
   const handleBack = () => {
     const params = new URLSearchParams({
@@ -21,7 +38,10 @@ export function useDateSelect(hostName: string, meetingName: string) {
     router.replace(`/create?${params.toString()}`);
   };
 
-  const handleNext = async (formattedDates: string[]) => {
+  const handleNext = async (
+    formattedDates: string[],
+    timeRangePayload?: TimeRangePayload,
+  ) => {
     if (formattedDates.length === 0) {
       alert('날짜를 선택해주세요.');
       return;
@@ -29,6 +49,9 @@ export function useDateSelect(hostName: string, meetingName: string) {
 
     trackEvent('host_create_meeting_cta_click', {
       total_days: formattedDates.length,
+      time_range_enabled: Boolean(timeRangePayload),
+      start_time: timeRangePayload?.startTime,
+      end_time: timeRangePayload?.endTime,
     });
 
     try {
@@ -36,11 +59,13 @@ export function useDateSelect(hostName: string, meetingName: string) {
         title: meetingName,
         hostName,
         dates: formattedDates,
+        timeRange: timeRangePayload,
       });
 
       console.log('모임 생성 완료:', response);
       setCreatedMeetingId(response.id);
       setSelectedDates(formattedDates);
+      setCreatedTimeRange(timeRangePayload);
       setIsBottomSheetOpen(true);
     } catch (error) {
       console.error('모임 생성 실패:', error);
@@ -70,11 +95,20 @@ export function useDateSelect(hostName: string, meetingName: string) {
       selection: 'all_available',
     });
     if (createdMeetingId && selectedDates.length > 0) {
+      // 시간 모임이면 모든 날짜 × 모든 슬롯 = true 인 voteTimeSlots 도 함께 전달.
+      // (날짜 모임이면 voteTimeSlots 미포함 — voteRequestDto.voteTimeSlots 가 optional)
+      const voteTimeSlots = createdTimeRange
+        ? selectedDates.map(() =>
+            Array(calcSlotCount(createdTimeRange)).fill(true),
+          )
+        : undefined;
+
       try {
         await updateVote({
           meetingId: createdMeetingId,
           name: hostName,
           voteDates: selectedDates,
+          voteTimeSlots,
         });
         console.log('주최자 투표 완료');
         // 캐시 무효화를 위해 전체 페이지 새로고침으로 이동

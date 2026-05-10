@@ -7,6 +7,7 @@ import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import TopBar from '@/shared/ui/top-bar/TopBar';
 
+import { writeLastHostName } from '../lib/hostNameStorage';
 import { useMeetCreateForm } from '../model/useMeetCreateForm';
 
 interface MeetCreatePageProps {
@@ -24,6 +25,7 @@ export default function MeetCreatePage({
     meetingName,
     meetingNamePlaceholder,
     hostNameError,
+    meetingNameError,
     isValid,
     handleHostNameChange,
     handleHostNameClear,
@@ -63,15 +65,19 @@ export default function MeetCreatePage({
       });
     }
 
+    // 자동 채움용 영구 저장 — CTA 성공 시점에만 (FR-005, FR-006)
+    const trimmedHostName = hostName.trim();
+    writeLastHostName(trimmedHostName);
+
     const params = new URLSearchParams({
-      hostName: hostName.trim(),
+      hostName: trimmedHostName,
       meetingName: finalMeetingName,
     });
     router.replace(`/date?${params.toString()}`);
   };
 
   return (
-    <div className='bg-gray-0 flex min-h-screen flex-col'>
+    <div className='bg-gray-0 min-h-screen-safe flex flex-col'>
       <TopBar
         title='모임 만들기'
         leftIcon='arrow_prev'
@@ -96,6 +102,7 @@ export default function MeetCreatePage({
             maxLength={10}
             fullWidth
             required
+            autoFocus
             errorMessage={hostNameError}
           />
 
@@ -108,6 +115,7 @@ export default function MeetCreatePage({
             placeholder={meetingNamePlaceholder}
             maxLength={10}
             fullWidth
+            errorMessage={meetingNameError}
             suppressHydrationWarning
           />
         </div>
