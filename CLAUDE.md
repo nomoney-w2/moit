@@ -4,6 +4,9 @@ Auto-generated from all feature plans. Last updated: 2026-02-14
 
 ## Active Technologies
 
+- TypeScript 5 + Next.js 16 (App Router), React 19, Tailwind CSS 4 + CVA + clsx + tailwind-merge (feat/#78-time-vote-spacing-fix)
+- N/A (클라이언트 상태만) (feat/#78-time-vote-spacing-fix)
+
 - TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul (바텀 시트 후보), date-fns ^4.1.0 (feat/#131-time-range-picker)
 - TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul(바텀 시트 — `@/shared/ui/bottom-sheet/BottomSheet`에서 캡슐화), date-fns ^4.1.0, react-datepicker ^9.1.0(기존), ky(HTTP), zod(검증), Amplitude(analytics) (feat/#131-time-range-picker)
 - N/A — 클라이언트 상태만. 서버 저장은 `POST /v1/meeting` 바디에 직렬화된 `timeRange`로 단발 전송. (feat/#131-time-range-picker)
