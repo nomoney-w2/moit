@@ -88,7 +88,7 @@ export default function DateSelectPage({
         </h1>
 
         {/* 캘린더 영역 */}
-        <div className='mb-6 flex justify-center'>
+        <div className='flex justify-center'>
           <ReactDatepickerAdapter
             selectedDates={selectedDates}
             onChange={handleDateChangeWithTracking}
