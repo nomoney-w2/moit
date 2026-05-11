@@ -190,7 +190,8 @@ export default function TimeSlotGrid({
         {dates.map((date, dateIndex) => {
           const { weekday, md } = formatDateHeader(date);
           const dow = parseDate(date).getDay();
-          const isWeekend = dow === 0 || dow === 6;
+          const isSunday = dow === 0;
+          const isSaturday = dow === 6;
           const prevDate = dateIndex > 0 ? dates[dateIndex - 1] : null;
           const isWeekChange =
             prevDate !== null &&
@@ -214,7 +215,11 @@ export default function TimeSlotGrid({
               >
                 <span
                   className={`text-[12px] font-semibold ${
-                    isWeekend ? 'text-red-400' : 'text-text-tertiary'
+                    isSunday
+                      ? 'text-red-400'
+                      : isSaturday
+                        ? 'text-blue-60'
+                        : 'text-text-tertiary'
                   }`}
                 >
                   {weekday}
