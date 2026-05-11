@@ -35,13 +35,10 @@ TypeScript 5: Follow standard conventions
 
 ## Recent Changes
 
+- feat/#80-weekend-day-color: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+
 - feat/#131-time-range-picker: Added TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul(바텀 시트 — `@/shared/ui/bottom-sheet/BottomSheet`에서 캡슐화), date-fns ^4.1.0, react-datepicker ^9.1.0(기존), ky(HTTP), zod(검증), Amplitude(analytics)
 - feat/#131-time-range-picker: Added TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul (바텀 시트 후보), date-fns ^4.1.0
-
-- feat/#68-vote-rank-cards: Added TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, date-fns, ky(미사용 — 본 단계 mock), zod(미사용 — 본 단계 mock)
-- feat/#68-vote-rank-cards: Added N/A (클라이언트 mock fixture)
-
-- feat/#127-calendar-drag-path: Added TypeScript 5 + React 19, Next.js 16 (App Router), react-datepicker ^9.1.0, date-fns ^4.1.0
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
