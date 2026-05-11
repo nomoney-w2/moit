@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -11,6 +12,9 @@ if (!apiBaseUrl) {
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   async rewrites() {
     return [
       {
