@@ -24,10 +24,6 @@ interface TimeRangePickerProps {
   ) => void;
 }
 
-function displayTime(t: TimeValue): string {
-  return `${String(t.hour).padStart(2, '0')} : ${String(t.minute).padStart(2, '0')}`;
-}
-
 /** minTime 이후의 첫 번째 유효 시각을 반환 */
 function firstValidAfter(minTime: TimeValue): TimeValue {
   if (minTime.minute === 0) return { hour: minTime.hour, minute: 30 };
@@ -120,10 +116,10 @@ export default function TimeRangePicker({
 
   return (
     <>
-      <section className='px-5 py-4'>
+      <section className='flex flex-col gap-2.5'>
         {/* 섹션 헤더 + 토글 */}
-        <div className='flex items-center justify-between'>
-          <span className='text-text-primary text-lg font-bold'>
+        <div className='flex items-center justify-between pt-6 pb-2'>
+          <span className='text-text-secondary text-lg font-semibold'>
             시간 투표 받기
           </span>
           <Toggle
@@ -134,37 +130,60 @@ export default function TimeRangePicker({
         </div>
 
         {isEnabled && (
-          <div className='mt-4 flex flex-col gap-3'>
+          <div className='flex flex-col gap-2.5'>
             {/* 시작 시간 카드 */}
             <button
               type='button'
               onClick={() => openPicker('start')}
-              className='flex w-full items-center justify-between rounded-2xl border border-gray-200 px-5 py-4'
+              className='flex w-full items-center gap-5'
             >
-              <span className='text-text-primary text-base font-medium'>
+              <span className='text-text-secondary shrink-0 text-base font-medium'>
                 시작 시간
               </span>
-              <span className='text-text-primary text-base font-semibold tabular-nums'>
-                {displayTime(startTime ?? DEFAULT_START_TIME)}
-              </span>
+              <div className='text-text-secondary flex flex-1 items-center justify-between rounded-[6px] border border-gray-200 bg-white px-5 py-3.5'>
+                <span className='min-w-0 flex-1 text-center text-lg font-semibold tabular-nums'>
+                  {String((startTime ?? DEFAULT_START_TIME).hour).padStart(
+                    2,
+                    '0',
+                  )}
+                </span>
+                <span className='shrink-0 text-lg font-semibold'>:</span>
+                <span className='min-w-0 flex-1 text-center text-lg font-semibold tabular-nums'>
+                  {String((startTime ?? DEFAULT_START_TIME).minute).padStart(
+                    2,
+                    '0',
+                  )}
+                </span>
+              </div>
             </button>
 
             {/* 종료 시간 카드 */}
             <button
               type='button'
               onClick={() => openPicker('end')}
-              className='flex w-full items-center justify-between rounded-2xl border border-gray-200 px-5 py-4'
+              className='flex w-full items-center gap-5'
             >
-              <span className='text-text-primary text-base font-medium'>
+              <span className='text-text-secondary shrink-0 text-base font-medium'>
                 종료 시간
               </span>
-              <span
-                className={`text-base font-semibold tabular-nums ${
-                  isEndInvalid ? 'text-red-400' : 'text-text-primary'
+              <div
+                className={`flex flex-1 items-center justify-between rounded-[6px] border bg-white px-5 py-3.5 ${
+                  isEndInvalid
+                    ? 'border-red-400 text-red-400'
+                    : 'text-text-secondary border-gray-200'
                 }`}
               >
-                {displayTime(endTime ?? DEFAULT_END_TIME)}
-              </span>
+                <span className='min-w-0 flex-1 text-center text-lg font-semibold tabular-nums'>
+                  {String((endTime ?? DEFAULT_END_TIME).hour).padStart(2, '0')}
+                </span>
+                <span className='shrink-0 text-lg font-semibold'>:</span>
+                <span className='min-w-0 flex-1 text-center text-lg font-semibold tabular-nums'>
+                  {String((endTime ?? DEFAULT_END_TIME).minute).padStart(
+                    2,
+                    '0',
+                  )}
+                </span>
+              </div>
             </button>
           </div>
         )}
