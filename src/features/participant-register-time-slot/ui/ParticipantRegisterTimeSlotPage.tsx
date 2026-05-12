@@ -23,9 +23,7 @@ export default function ParticipantRegisterTimeSlotPage({
     isAllImpossible,
     isCtaActive,
     isSelected,
-    beginDrag,
-    updateDrag,
-    endDrag,
+    onCellTap,
     handleAllImpossibleChange,
     handleBack,
     handleSubmit,
@@ -66,9 +64,7 @@ export default function ParticipantRegisterTimeSlotPage({
             dates={dates}
             timeRange={timeRange}
             isSelected={isSelected}
-            beginDrag={beginDrag}
-            updateDrag={updateDrag}
-            endDrag={endDrag}
+            onCellTap={onCellTap}
           />
         </div>
 

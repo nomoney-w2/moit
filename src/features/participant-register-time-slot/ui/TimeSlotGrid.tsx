@@ -1,13 +1,13 @@
 'use client';
 
 import { isSameWeek } from 'date-fns';
-import { type PointerEvent as ReactPointerEvent, useRef } from 'react';
 
 import { type TimeRangeWithSlotCount } from '@/entities/meet/dto/meet.dto';
 import TimeSlotCell from '@/features/participant-register-time-slot/ui/TimeSlotCell';
 import { parseDate } from '@/shared/lib/date';
 
-const SLOT_H = 40;
+// 시안 (Figma 3627:6217) 기준: 셀 32px, 1시간 그룹 64px, corner radius 8px.
+const SLOT_H = 32;
 const HOUR_H = SLOT_H * 2;
 const TIME_COL_W = 40;
 const DAY_HEADER_H = 56;
@@ -43,9 +43,7 @@ interface TimeSlotGridProps {
   dates: string[];
   timeRange: TimeRangeWithSlotCount;
   isSelected: (dateIndex: number, slotIndex: number) => boolean;
-  beginDrag: (dateIndex: number, slotIndex: number) => void;
-  updateDrag: (dateIndex: number, slotIndex: number) => void;
-  endDrag: () => void;
+  onCellTap: (dateIndex: number, slotIndex: number) => void;
 }
 
 function timeToMinutes(t: string): number {
@@ -53,34 +51,11 @@ function timeToMinutes(t: string): number {
   return hh * 60 + mm;
 }
 
-/**
- * `clientX/clientY` 위치의 셀 좌표(`dateIndex`, `slotIndex`) 를 추출.
- * data attribute 로 셀을 식별. 셀 외 영역(헤더/시간 컬럼/패딩) 이면 null.
- */
-function getCellAtPoint(
-  x: number,
-  y: number,
-): {
-  dateIndex: number;
-  slotIndex: number;
-} | null {
-  const el = document.elementFromPoint(x, y);
-  if (!el) return null;
-  const cellEl = el.closest('[data-date-index]') as HTMLElement | null;
-  if (!cellEl) return null;
-  const dateIndex = Number(cellEl.dataset.dateIndex);
-  const slotIndex = Number(cellEl.dataset.slotIndex);
-  if (Number.isNaN(dateIndex) || Number.isNaN(slotIndex)) return null;
-  return { dateIndex, slotIndex };
-}
-
 export default function TimeSlotGrid({
   dates,
   timeRange,
   isSelected,
-  beginDrag,
-  updateDrag,
-  endDrag,
+  onCellTap,
 }: TimeSlotGridProps) {
   // timeRange 의 startTime ~ endTime 만 표시.
   // 1시간 = 2 슬롯 그룹으로 묶음.
@@ -123,49 +98,12 @@ export default function TimeSlotGrid({
 
   const colWidth = buildColWidth(dates.length);
 
-  // 마지막 드래그 셀 좌표 — 같은 셀에서 pointermove 가 반복되어도 updateDrag 재호출 방지.
-  const lastCellRef = useRef<{ dateIndex: number; slotIndex: number } | null>(
-    null,
-  );
-
-  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const cell = getCellAtPoint(e.clientX, e.clientY);
-    if (!cell) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    lastCellRef.current = cell;
-    beginDrag(cell.dateIndex, cell.slotIndex);
-  };
-
-  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (lastCellRef.current === null) return;
-    const cell = getCellAtPoint(e.clientX, e.clientY);
-    if (!cell) return;
-    const last = lastCellRef.current;
-    if (last.dateIndex === cell.dateIndex && last.slotIndex === cell.slotIndex)
-      return;
-    lastCellRef.current = cell;
-    updateDrag(cell.dateIndex, cell.slotIndex);
-  };
-
-  const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    lastCellRef.current = null;
-    endDrag();
-    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
-      e.currentTarget.releasePointerCapture?.(e.pointerId);
-    }
-  };
-
   return (
     <div
       role='grid'
       aria-rowcount={timeRange.slotCount + 1}
       aria-colcount={dates.length + 1}
-      className='flex w-full touch-none overflow-auto pb-5'
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      className='flex w-full overflow-auto pb-5'
     >
       <div
         className='sticky left-0 z-20 shrink-0 bg-white'
@@ -173,16 +111,22 @@ export default function TimeSlotGrid({
       >
         <div style={{ height: DAY_HEADER_H }} />
         <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-          {groups.map((group) => (
-            <div
-              key={group.hour}
-              role='rowheader'
-              style={{ height: HOUR_H }}
-              className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
-            >
-              {group.hour}
-            </div>
-          ))}
+          {groups.map((group) => {
+            const visibleSlots =
+              (group.topSlotIdx !== null ? 1 : 0) +
+              (group.botSlotIdx !== null ? 1 : 0);
+            const rowHeight = visibleSlots === 1 ? SLOT_H : HOUR_H;
+            return (
+              <div
+                key={group.hour}
+                role='rowheader'
+                style={{ height: rowHeight }}
+                className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
+              >
+                {group.hour}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -230,39 +174,55 @@ export default function TimeSlotGrid({
               </div>
 
               <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-                {groups.map((group) => (
-                  <div
-                    key={`${date}-${group.hour}`}
-                    role='row'
-                    className='overflow-hidden rounded-[10px]'
-                    style={{ height: HOUR_H }}
-                  >
-                    {group.topSlotIdx !== null ? (
-                      <TimeSlotCell
-                        dateIndex={dateIndex}
-                        slotIndex={group.topSlotIdx}
-                        isSelected={isSelected(dateIndex, group.topSlotIdx)}
-                        height={SLOT_H}
-                      />
-                    ) : (
-                      <div style={{ height: SLOT_H }} />
-                    )}
+                {groups.map((group) => {
+                  const hasTop = group.topSlotIdx !== null;
+                  const hasBot = group.botSlotIdx !== null;
+                  const visibleSlots = (hasTop ? 1 : 0) + (hasBot ? 1 : 0);
+                  const rowHeight = visibleSlots === 1 ? SLOT_H : HOUR_H;
+
+                  return (
                     <div
-                      className='border-t border-dashed border-white/40'
-                      style={{ marginTop: -1 }}
-                    />
-                    {group.botSlotIdx !== null ? (
-                      <TimeSlotCell
-                        dateIndex={dateIndex}
-                        slotIndex={group.botSlotIdx}
-                        isSelected={isSelected(dateIndex, group.botSlotIdx)}
-                        height={SLOT_H}
-                      />
-                    ) : (
-                      <div style={{ height: SLOT_H }} />
-                    )}
-                  </div>
-                ))}
+                      key={`${date}-${group.hour}`}
+                      role='row'
+                      className='rounded-dropdown relative flex flex-col overflow-hidden'
+                      style={{ height: rowHeight }}
+                    >
+                      {hasTop && (
+                        <TimeSlotCell
+                          dateIndex={dateIndex}
+                          slotIndex={group.topSlotIdx as number}
+                          isSelected={isSelected(
+                            dateIndex,
+                            group.topSlotIdx as number,
+                          )}
+                          height={SLOT_H}
+                          onTap={onCellTap}
+                        />
+                      )}
+                      {hasBot && (
+                        <TimeSlotCell
+                          dateIndex={dateIndex}
+                          slotIndex={group.botSlotIdx as number}
+                          isSelected={isSelected(
+                            dateIndex,
+                            group.botSlotIdx as number,
+                          )}
+                          height={SLOT_H}
+                          onTap={onCellTap}
+                        />
+                      )}
+                      {hasTop && hasBot && (
+                        // absolute 로 띄워 flow 영향 0. 두 셀 사이 정확히 가운데에 점선.
+                        // 점선 색은 시안 #E6E8EB (≈ border-gray-200) — 셀 색 무관 항상 회색.
+                        <div
+                          aria-hidden
+                          className='pointer-events-none absolute right-0 left-0 border-t border-dashed border-gray-200'
+                          style={{ top: SLOT_H }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

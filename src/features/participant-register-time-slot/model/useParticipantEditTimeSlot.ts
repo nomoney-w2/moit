@@ -25,9 +25,7 @@ interface UseParticipantEditTimeSlotResult {
   isSubmitting: boolean;
   isCtaActive: boolean;
   isSelected: (dateIndex: number, slotIndex: number) => boolean;
-  beginDrag: (dateIndex: number, slotIndex: number) => void;
-  updateDrag: (dateIndex: number, slotIndex: number) => void;
-  endDrag: () => void;
+  onCellTap: (dateIndex: number, slotIndex: number) => void;
   handleAllImpossibleChange: (checked: boolean) => void;
   handleBack: () => void;
   handleSubmit: () => Promise<void>;
@@ -50,15 +48,8 @@ export function useParticipantEditTimeSlot(
   const [isAllImpossible, setIsAllImpossible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    selected,
-    isSelected,
-    beginDrag,
-    updateDrag,
-    endDrag,
-    reset,
-    replaceSelection,
-  } = useTimeSlotSelection();
+  const { selected, isSelected, tapCell, reset, replaceSelection } =
+    useTimeSlotSelection();
 
   const successModal = useDisclosure();
 
@@ -156,12 +147,10 @@ export function useParticipantEditTimeSlot(
     isSubmitting,
     isCtaActive,
     isSelected,
-    beginDrag: (d, s) => {
+    onCellTap: (d, s) => {
       if (isAllImpossible) setIsAllImpossible(false);
-      beginDrag(d, s);
+      tapCell(d, s);
     },
-    updateDrag,
-    endDrag,
     handleAllImpossibleChange,
     handleBack,
     handleSubmit,

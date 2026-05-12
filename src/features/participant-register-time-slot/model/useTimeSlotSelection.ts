@@ -2,25 +2,38 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-import {
-  rectKeys,
-  slotKey,
-} from '@/features/participant-register-time-slot/lib/timeSlotMatrix';
+import { slotKey } from '@/features/participant-register-time-slot/lib/timeSlotMatrix';
 
 interface UseTimeSlotSelectionOptions {
   initial?: Set<string>;
 }
 
+type AnchorMode = 'add' | 'remove';
+
+interface Anchor {
+  dateIndex: number;
+  slotIndex: number;
+  mode: AnchorMode;
+}
+
 /**
- * 30분 슬롯 그리드의 드래그 다중 선택 상태 훅.
- * - `beginDrag`: pointer down. 시작 셀이 unselected → additive(추가) 모드, selected → remove(해제) 모드.
- * - `updateDrag`: pointer enter. 시작점 ~ 현재점 사각형 영역에 모드 적용.
- * - `endDrag`: pointer up/cancel/leave. 드래그 종료.
- * - `reset` / `replaceSelection`: 외부에서 selection 일괄 변경 (빈 set / 기존 투표 채움 등).
+ * 30분 슬롯 그리드의 "탭-탭 구간 선택" 상태 훅.
  *
- * 드래그 진행 중 중간 위치(`draggingTo`) 는 외부에 노출하지 않는다 (매 pointermove
- * 시 setState 가 발생하면 그리드 전체가 리렌더되어 성능 저하). 시각 피드백은
- * `selected` set 자체로 충분하다.
+ * 앵커는 위치 + mode(add/remove) 를 같이 들고 있다.
+ *
+ * - 빈 셀 탭: 단일 선택, 앵커 = (위치, add)
+ * - 빈 셀 탭 (같은 컬럼, add 앵커 존재): 앵커 ~ 탭 위치 구간을 모두 선택, 앵커 해제
+ * - 선택된 셀 탭: 단일 해제, 앵커 = (위치, remove)
+ * - 선택된 셀 탭 (같은 컬럼, remove 앵커 존재): 앵커 ~ 탭 위치 구간을 모두 해제, 앵커 해제
+ * - 그 외(컬럼 다름 / mode 불일치): 새 단일 탭으로 재시작 (앵커 갱신)
+ *
+ * 드래그(연속 다중) 는 의도적으로 제공하지 않는다 — 모바일에서 페이지 스크롤과
+ * 충돌하지 않도록 단일 탭만으로 구간을 만들 수 있게 한 결정.
+ *
+ * 구현 메모: `setSelected` 의 업데이터 콜백 안에서 `anchorRef.current` 를 변이하면
+ * React StrictMode 가 업데이터를 두 번 호출하면서 두 번째 실행 시 anchor 가 이미
+ * 변경되어 분기를 잘못 타는 버그가 있다. 그래서 다음 상태 / 다음 앵커는 외부에서
+ * 계산하고 `setSelected` 에는 값만 전달한다.
  */
 export function useTimeSlotSelection(
   options: UseTimeSlotSelectionOptions = {},
@@ -28,64 +41,53 @@ export function useTimeSlotSelection(
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(options.initial),
   );
-  const dragOriginRef = useRef<{
-    dateIndex: number;
-    slotIndex: number;
-    additive: boolean;
-    baseline: Set<string>;
-  } | null>(null);
+  const anchorRef = useRef<Anchor | null>(null);
 
-  const beginDrag = useCallback(
+  const tapCell = useCallback(
     (dateIndex: number, slotIndex: number) => {
       const key = slotKey(dateIndex, slotIndex);
-      const additive = !selected.has(key);
-      dragOriginRef.current = {
-        dateIndex,
-        slotIndex,
-        additive,
-        baseline: new Set(selected),
-      };
-      setSelected((prev) => {
-        const next = new Set(prev);
-        if (additive) next.add(key);
-        else next.delete(key);
-        return next;
-      });
+      const isAlreadySelected = selected.has(key);
+      const desiredMode: AnchorMode = isAlreadySelected ? 'remove' : 'add';
+
+      const next = new Set(selected);
+      const anchor = anchorRef.current;
+
+      const canRange =
+        anchor !== null &&
+        anchor.dateIndex === dateIndex &&
+        anchor.slotIndex !== slotIndex &&
+        anchor.mode === desiredMode;
+
+      if (canRange && anchor !== null) {
+        const sMin = Math.min(anchor.slotIndex, slotIndex);
+        const sMax = Math.max(anchor.slotIndex, slotIndex);
+        for (let s = sMin; s <= sMax; s += 1) {
+          const k = slotKey(dateIndex, s);
+          if (anchor.mode === 'add') next.add(k);
+          else next.delete(k);
+        }
+        anchorRef.current = null;
+      } else if (isAlreadySelected) {
+        next.delete(key);
+        anchorRef.current = { dateIndex, slotIndex, mode: 'remove' };
+      } else {
+        next.add(key);
+        anchorRef.current = { dateIndex, slotIndex, mode: 'add' };
+      }
+
+      setSelected(next);
     },
     [selected],
   );
 
-  const updateDrag = useCallback((dateIndex: number, slotIndex: number) => {
-    const origin = dragOriginRef.current;
-    if (!origin) return;
-    const region = rectKeys(
-      origin.dateIndex,
-      origin.slotIndex,
-      dateIndex,
-      slotIndex,
-    );
-    setSelected(() => {
-      const next = new Set(origin.baseline);
-      if (origin.additive) {
-        for (const key of region) next.add(key);
-      } else {
-        for (const key of region) next.delete(key);
-      }
-      return next;
-    });
-  }, []);
-
-  const endDrag = useCallback(() => {
-    dragOriginRef.current = null;
-  }, []);
-
   const reset = useCallback(() => {
     setSelected(new Set());
-    dragOriginRef.current = null;
+    anchorRef.current = null;
   }, []);
 
   const replaceSelection = useCallback((next: Set<string>) => {
     setSelected(new Set(next));
+    anchorRef.current = null;
   }, []);
 
   const isSelected = useCallback(
@@ -97,9 +99,7 @@ export function useTimeSlotSelection(
   return {
     selected,
     isSelected,
-    beginDrag,
-    updateDrag,
-    endDrag,
+    tapCell,
     reset,
     replaceSelection,
   };
