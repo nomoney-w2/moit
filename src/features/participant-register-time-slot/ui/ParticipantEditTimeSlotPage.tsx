@@ -2,10 +2,9 @@
 
 import { useParticipantEditTimeSlot } from '@/features/participant-register-time-slot/model/useParticipantEditTimeSlot';
 import TimeSlotGrid from '@/features/participant-register-time-slot/ui/TimeSlotGrid';
+import TimeSlotPageFooter from '@/features/participant-register-time-slot/ui/TimeSlotPageFooter';
 import { trackEvent } from '@/shared/lib/amplitude';
 import SuccessBottomSheet from '@/shared/ui/bottom-sheet/SuccessBottomSheet';
-import Button from '@/shared/ui/button/Button';
-import Checkbox from '@/shared/ui/checkbox/Checkbox';
 import { Header } from '@/shared/ui/header/Header';
 import TopBar from '@/shared/ui/top-bar/TopBar';
 
@@ -58,7 +57,7 @@ export default function ParticipantEditTimeSlotPage({
       />
       <Header variant='subHeader' title={'가능한 시간을\n다시 선택해주세요'} />
 
-      <main className='flex flex-1 flex-col pt-1 pb-10'>
+      <main className='flex flex-1 flex-col pt-1 pb-36'>
         <div className='@container relative flex-1'>
           <TimeSlotGrid
             dates={dates}
@@ -67,29 +66,15 @@ export default function ParticipantEditTimeSlotPage({
             onCellTap={onCellTap}
           />
         </div>
-
-        <div className='mt-6 mb-6 px-5'>
-          <div
-            className='flex cursor-pointer items-center gap-2'
-            onClick={() => handleAllImpossibleChange(!isAllImpossible)}
-          >
-            <Checkbox checked={isAllImpossible} onChange={() => {}} />
-            <span className='text-body-4 text-text-secondary select-none'>
-              모든 날짜에 참여가 어려워요
-            </span>
-          </div>
-        </div>
-
-        <div className='px-5'>
-          <Button
-            onClick={handleSubmitWithTracking}
-            disabled={!isCtaActive}
-            fullWidth
-          >
-            수정하기
-          </Button>
-        </div>
       </main>
+
+      <TimeSlotPageFooter
+        isAllImpossible={isAllImpossible}
+        onAllImpossibleChange={handleAllImpossibleChange}
+        ctaLabel='수정하기'
+        isCtaActive={isCtaActive}
+        onCtaClick={handleSubmitWithTracking}
+      />
 
       <SuccessBottomSheet
         isOpen={isSuccessModalOpen}
