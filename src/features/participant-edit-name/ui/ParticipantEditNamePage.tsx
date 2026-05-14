@@ -1,6 +1,7 @@
 'use client';
 
 import { trackEvent } from '@/shared/lib/amplitude';
+import { handleKeyboardNav } from '@/shared/lib/handleKeyboardNav';
 import Button from '@/shared/ui/button/Button';
 import { Header } from '@/shared/ui/header/Header';
 import Input from '@/shared/ui/input/Input';
@@ -59,8 +60,10 @@ export default function ParticipantEditNamePage({
             onChange={handleNameChange}
             onBlur={handleNameBlur}
             onClear={handleNameClear}
+            onKeyDown={(e) => handleKeyboardNav(e)}
             placeholder='투표에 참여했던 이름을 입력해주세요'
             maxLength={maxLength}
+            enterKeyHint='done'
             fullWidth
             required
             autoFocus // 화면 진입 시 자동 포커스

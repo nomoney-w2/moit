@@ -5,23 +5,24 @@ interface TimeSlotCellProps {
   slotIndex: number;
   isSelected: boolean;
   height: number;
+  onTap: (dateIndex: number, slotIndex: number) => void;
 }
 
-// 입력 화면 BASE 톤 (시안 기준): 결과 페이지의 4% opacity 보다 진하게.
-// 시안에서 1시간 박스 rounded-[10px] 윤곽이 명확히 보이는 정도.
-const INPUT_BASE_TONE = 'bg-[#F1F5FB]';
+// 시안 (Figma 3617:5634) 기준 BASE 톤 = #F9FAFB (Tailwind gray-50).
+// HeatmapCell 의 BASE_TONE_CLASS 와 동일 색 — 결과/입력/수정 일관.
+const INPUT_BASE_TONE = 'bg-gray-50';
 
 /**
- * 시간 슬롯 그리드 셀.
- * pointer 이벤트는 부모 `TimeSlotGrid` 가 elementFromPoint 로 처리한다
- * (셀 별로 setPointerCapture 를 사용하면 origin 셀이 후속 이벤트를 독점해서
- * 다른 셀에 진입해도 드래그가 퍼지지 않는 문제 회피).
+ * 시간 슬롯 그리드 셀. 탭(클릭) 으로만 선택 — 드래그 다중 선택은 의도적으로 막음.
+ * 같은 컬럼에서 두 번 탭하면 사이 구간이 채워지고, 다른 컬럼은 새 단일 선택으로
+ * 시작된다. 동작 규칙은 `useTimeSlotSelection` 참고.
  */
 export default function TimeSlotCell({
   dateIndex,
   slotIndex,
   isSelected,
   height,
+  onTap,
 }: TimeSlotCellProps) {
   const colorClass = isSelected ? 'bg-[#3C7EFA]' : INPUT_BASE_TONE;
 
@@ -30,10 +31,9 @@ export default function TimeSlotCell({
       type='button'
       role='gridcell'
       tabIndex={-1}
-      data-date-index={dateIndex}
-      data-slot-index={slotIndex}
       aria-selected={isSelected}
       style={{ height }}
+      onClick={() => onTap(dateIndex, slotIndex)}
       className={`box-border w-full cursor-pointer select-none ${colorClass}`}
     />
   );

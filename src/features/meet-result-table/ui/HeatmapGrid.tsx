@@ -116,16 +116,22 @@ export default function HeatmapGrid({
       >
         <div style={{ height: DAY_HEADER_H }} />
         <div className='flex flex-col' style={{ gap: ROW_GAP }}>
-          {groups.map((group) => (
-            <div
-              key={group.hour}
-              role='rowheader'
-              style={{ height: HOUR_H }}
-              className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
-            >
-              {group.hour}
-            </div>
-          ))}
+          {groups.map((group) => {
+            const visibleSlots =
+              (group.topSlotIdx !== null ? 1 : 0) +
+              (group.botSlotIdx !== null ? 1 : 0);
+            const rowHeight = visibleSlots === 1 ? SLOT_H : HOUR_H;
+            return (
+              <div
+                key={group.hour}
+                role='rowheader'
+                style={{ height: rowHeight }}
+                className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
+              >
+                {group.hour}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -133,7 +139,8 @@ export default function HeatmapGrid({
         {slotStat.dates.map((date, dateIndex) => {
           const { weekday, md } = formatDateHeader(date);
           const dow = parseDate(date).getDay();
-          const isWeekend = dow === 0 || dow === 6;
+          const isSunday = dow === 0;
+          const isSaturday = dow === 6;
           const prevDate = dateIndex > 0 ? slotStat.dates[dateIndex - 1] : null;
           const isWeekChange =
             prevDate !== null &&
@@ -157,7 +164,11 @@ export default function HeatmapGrid({
               >
                 <span
                   className={`text-[12px] font-semibold ${
-                    isWeekend ? 'text-red-400' : 'text-text-tertiary'
+                    isSunday
+                      ? 'text-red-400'
+                      : isSaturday
+                        ? 'text-blue-60'
+                        : 'text-text-tertiary'
                   }`}
                 >
                   {weekday}
@@ -171,10 +182,13 @@ export default function HeatmapGrid({
                 {groups.map((group) => {
                   const topSlotIdx = group.topSlotIdx;
                   const botSlotIdx = group.botSlotIdx;
-                  const topKey =
-                    topSlotIdx !== null ? cellKey(date, topSlotIdx) : null;
-                  const botKey =
-                    botSlotIdx !== null ? cellKey(date, botSlotIdx) : null;
+                  const hasTop = topSlotIdx !== null;
+                  const hasBot = botSlotIdx !== null;
+                  const visibleSlots = (hasTop ? 1 : 0) + (hasBot ? 1 : 0);
+                  const rowHeight = visibleSlots === 1 ? SLOT_H : HOUR_H;
+
+                  const topKey = hasTop ? cellKey(date, topSlotIdx) : null;
+                  const botKey = hasBot ? cellKey(date, botSlotIdx) : null;
                   const topCell = topKey ? cellByKey.get(topKey) : undefined;
                   const botCell = botKey ? cellByKey.get(botKey) : undefined;
                   const topIntensity =
@@ -186,10 +200,10 @@ export default function HeatmapGrid({
                     <div
                       key={`${date}-${group.hour}`}
                       role='row'
-                      className='overflow-hidden rounded-[10px]'
-                      style={{ height: HOUR_H }}
+                      className='rounded-dropdown relative flex flex-col overflow-hidden'
+                      style={{ height: rowHeight }}
                     >
-                      {topSlotIdx !== null ? (
+                      {hasTop && (
                         <HeatmapCell
                           date={date}
                           slotIdx={topSlotIdx}
@@ -202,17 +216,8 @@ export default function HeatmapGrid({
                             selected?.slotIdx === topSlotIdx
                           }
                         />
-                      ) : (
-                        <div style={{ height: SLOT_H }} />
                       )}
-                      <div
-                        className='border-t border-dashed border-white/40'
-                        style={{
-                          marginTop: -1,
-                          opacity: botIntensity !== null ? 1 : 0,
-                        }}
-                      />
-                      {botSlotIdx !== null ? (
+                      {hasBot && (
                         <HeatmapCell
                           date={date}
                           slotIdx={botSlotIdx}
@@ -225,8 +230,18 @@ export default function HeatmapGrid({
                             selected?.slotIdx === botSlotIdx
                           }
                         />
-                      ) : (
-                        <div style={{ height: SLOT_H }} />
+                      )}
+                      {hasTop && hasBot && (
+                        // absolute 로 띄워 flow 영향 0. 두 셀 사이 정확히 가운데에 점선.
+                        // 점선 색은 시안 #E6E8EB (≈ border-gray-200) — 셀 색(BASE/intensity) 무관 항상 회색.
+                        <div
+                          aria-hidden
+                          className='pointer-events-none absolute right-0 left-0 border-t border-dashed border-gray-200'
+                          style={{
+                            top: SLOT_H,
+                            opacity: botIntensity !== null ? 1 : 0,
+                          }}
+                        />
                       )}
                     </div>
                   );

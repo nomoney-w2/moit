@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 
 import { trackEvent } from '@/shared/lib/amplitude';
+import { handleKeyboardNav } from '@/shared/lib/handleKeyboardNav';
 import Button from '@/shared/ui/button/Button';
 import Input from '@/shared/ui/input/Input';
 import TopBar from '@/shared/ui/top-bar/TopBar';
@@ -20,6 +22,8 @@ export default function MeetCreatePage({
   initialMeetingName = '',
 }: MeetCreatePageProps) {
   const router = useRouter();
+  const meetingNameInputRef = useRef<HTMLInputElement>(null);
+
   const {
     hostName,
     meetingName,
@@ -98,8 +102,10 @@ export default function MeetCreatePage({
             onChange={handleHostNameChange}
             onBlur={handleHostNameBlur}
             onClear={handleHostNameClear}
+            onKeyDown={(e) => handleKeyboardNav(e, meetingNameInputRef)}
             placeholder='이름을 입력해주세요'
             maxLength={10}
+            enterKeyHint='next'
             fullWidth
             required
             autoFocus
@@ -107,13 +113,16 @@ export default function MeetCreatePage({
           />
 
           <Input
+            ref={meetingNameInputRef}
             label='모임명'
             value={meetingName}
             onChange={handleMeetingNameChange}
             onBlur={handleMeetingNameBlur}
             onClear={handleMeetingNameClear}
+            onKeyDown={(e) => handleKeyboardNav(e)}
             placeholder={meetingNamePlaceholder}
             maxLength={10}
+            enterKeyHint='done'
             fullWidth
             errorMessage={meetingNameError}
             suppressHydrationWarning

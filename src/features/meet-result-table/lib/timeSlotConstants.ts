@@ -10,7 +10,9 @@ export const OPACITY_CLASS_MAP: Record<OpacityLevel, string> = {
   10: 'bg-[#3C7EFA]/10',
 };
 
-export const BASE_TONE_CLASS = 'bg-[#3C7EFA]/[0.04]';
+// 시안 (Figma 3617:5634 / 3770:6061) 기준: BASE 셀 = #F9FAFB (Tailwind gray-50).
+// 모든 셀의 점선 분리는 #E6E8EB (≈ gray-200) 회색, 셀 색과 무관하게 동일 색으로 BASE/selected 양쪽 모두에서 보이도록 한다.
+export const BASE_TONE_CLASS = 'bg-gray-50';
 
 export function rankFromOpacity(opacity: OpacityLevel | null): number | null {
   if (opacity === null) return null;
