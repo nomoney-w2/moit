@@ -22,9 +22,7 @@ interface UseParticipantRegisterTimeSlotResult {
   isSubmitting: boolean;
   isCtaActive: boolean;
   isSelected: (dateIndex: number, slotIndex: number) => boolean;
-  beginDrag: (dateIndex: number, slotIndex: number) => void;
-  updateDrag: (dateIndex: number, slotIndex: number) => void;
-  endDrag: () => void;
+  onCellTap: (dateIndex: number, slotIndex: number) => void;
   handleAllImpossibleChange: (checked: boolean) => void;
   handleBack: () => void;
   handleSubmit: () => Promise<void>;
@@ -47,8 +45,7 @@ export function useParticipantRegisterTimeSlot(
   const [isAllImpossible, setIsAllImpossible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { selected, isSelected, beginDrag, updateDrag, endDrag, reset } =
-    useTimeSlotSelection();
+  const { selected, isSelected, tapCell, reset } = useTimeSlotSelection();
 
   const successModal = useDisclosure();
 
@@ -143,12 +140,10 @@ export function useParticipantRegisterTimeSlot(
     isSubmitting,
     isCtaActive,
     isSelected,
-    beginDrag: (d, s) => {
+    onCellTap: (d, s) => {
       if (isAllImpossible) setIsAllImpossible(false);
-      beginDrag(d, s);
+      tapCell(d, s);
     },
-    updateDrag,
-    endDrag,
     handleAllImpossibleChange,
     handleBack,
     handleSubmit,

@@ -33,26 +33,3 @@ export function matrixToSelection(matrix: boolean[][]): Set<string> {
   }
   return set;
 }
-
-/**
- * 시작 셀 (dateA, slotA) ~ 끝 셀 (dateB, slotB) 사이 직사각형 영역의 키 집합.
- * 같은 dateIndex 컬럼 내에서만 드래그하지만, 안전하게 양방향 처리.
- */
-export function rectKeys(
-  startDate: number,
-  startSlot: number,
-  endDate: number,
-  endSlot: number,
-): string[] {
-  const dMin = Math.min(startDate, endDate);
-  const dMax = Math.max(startDate, endDate);
-  const sMin = Math.min(startSlot, endSlot);
-  const sMax = Math.max(startSlot, endSlot);
-  const keys: string[] = [];
-  for (let d = dMin; d <= dMax; d += 1) {
-    for (let s = sMin; s <= sMax; s += 1) {
-      keys.push(slotKey(d, s));
-    }
-  }
-  return keys;
-}
