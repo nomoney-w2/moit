@@ -7,7 +7,7 @@ import { checkParticipantExist } from '@/entities/meet/api/checkParticipantExist
 
 // 상수 정의
 const MAX_NAME_LENGTH = 10;
-const REGEX_NAME = /^[ㄱ-힣a-zA-Z]*$/; // 한글, 영문만 허용
+const REGEX_NAME = /^[ㄱ-힣a-zA-Z ]*$/; // 한글, 영문, 공백 허용
 
 export function useParticipantRegisterName(meetingId: string) {
   const router = useRouter();
@@ -40,6 +40,16 @@ export function useParticipantRegisterName(meetingId: string) {
       setErrorDetails({
         isError: true,
         message: '한글, 영문만 입력 가능해요',
+      });
+      setName(value);
+      return;
+    }
+
+    // 1-3. 공백-only 입력 시 에러 처리
+    if (value !== '' && value.trim() === '') {
+      setErrorDetails({
+        isError: true,
+        message: '공백만 입력할 수 없어요',
       });
       setName(value);
       return;
@@ -105,7 +115,7 @@ export function useParticipantRegisterName(meetingId: string) {
   return {
     name,
     errorDetails,
-    isValidInput: name.length > 0 && !errorDetails.isError,
+    isValidInput: name.trim().length > 0 && !errorDetails.isError,
     maxLength: MAX_NAME_LENGTH,
     handleNameChange,
     handleNameClear,
