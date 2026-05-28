@@ -128,7 +128,7 @@ export default function HeatmapGrid({
                 style={{ height: rowHeight }}
                 className='text-text-tertiary flex items-start justify-end pr-2 text-[14px] leading-5 font-medium'
               >
-                {group.hour}
+                {String(group.hour).padStart(2, '0')}
               </div>
             );
           })}

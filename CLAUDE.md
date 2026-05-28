@@ -4,6 +4,9 @@ Auto-generated from all feature plans. Last updated: 2026-02-14
 
 ## Active Technologies
 
+- TypeScript 5 + Next.js 16 (App Router), React 19, Tailwind CSS 4 + CVA + clsx + tailwind-merge (feat/#87-meet-figma-sync-fixes)
+- N/A — 본 작업은 백엔드/로컬 저장 변경 없음 (feat/#87-meet-figma-sync-fixes)
+
 - N/A (클라이언트 상태만) (feat/#82-keyboard-next-focus)
 
 - TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul (바텀 시트 후보), date-fns ^4.1.0 (feat/#131-time-range-picker)
@@ -37,10 +40,11 @@ TypeScript 5: Follow standard conventions
 
 ## Recent Changes
 
+- feat/#87-meet-figma-sync-fixes: Added TypeScript 5 + Next.js 16 (App Router), React 19, Tailwind CSS 4 + CVA + clsx + tailwind-merge
+
 - feat/#82-keyboard-next-focus: Added TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4
 
 - feat/#131-time-range-picker: Added TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul(바텀 시트 — `@/shared/ui/bottom-sheet/BottomSheet`에서 캡슐화), date-fns ^4.1.0, react-datepicker ^9.1.0(기존), ky(HTTP), zod(검증), Amplitude(analytics)
-- feat/#131-time-range-picker: Added TypeScript 5 + React 19, Next.js 16 (App Router), Tailwind CSS 4 + CVA + clsx + tailwind-merge, vaul (바텀 시트 후보), date-fns ^4.1.0
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

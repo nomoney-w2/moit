@@ -38,6 +38,7 @@ const COMMON = {
   onCollapse: () => {},
   onExpand: () => {},
   onMoveTo: () => {},
+  timeRange: { startTime: '09:00', endTime: '18:00', slotCount: 18 },
 };
 
 export const TableMode: Story = {
@@ -57,5 +58,14 @@ export const ZeroVotes: Story = {
       cells: [],
       allParticipants: [],
     },
+  },
+};
+
+export const EarlyMorning: Story = {
+  name: '새벽 시간대 — 좌측 시 라벨 두 자리수(00~06)',
+  args: {
+    ...COMMON,
+    slotStat: generateMockVoteTimeSlotStat('demo-table-early', SEVEN_DATES),
+    timeRange: { startTime: '00:00', endTime: '06:00', slotCount: 12 },
   },
 };

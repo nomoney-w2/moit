@@ -14,6 +14,7 @@ const meta: Meta<typeof HeatmapGrid> = {
   args: {
     selected: null,
     onSelect: () => {},
+    timeRange: { startTime: '09:00', endTime: '18:00', slotCount: 18 },
   },
 };
 
@@ -78,6 +79,14 @@ export const ZeroVotes: Story = {
       ),
       allParticipants: PARTICIPANTS,
     },
+  },
+};
+
+export const EarlyMorning: Story = {
+  name: '새벽 시간대 — 좌측 시 라벨 두 자리수(00~06)',
+  args: {
+    slotStat: generateMockVoteTimeSlotStat('demo-early', SEVEN_DATES),
+    timeRange: { startTime: '00:00', endTime: '06:00', slotCount: 12 },
   },
 };
 
