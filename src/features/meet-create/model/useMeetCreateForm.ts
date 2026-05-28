@@ -20,8 +20,8 @@ const getRandomPlaceholder = () => {
   return MEETING_NAME_PLACEHOLDERS[randomIndex];
 };
 
-// 모임명 허용 문자: 한글, 영문(대소문자), 숫자
-const MEETING_NAME_REGEX = /^[ㄱ-힣a-zA-Z0-9]*$/;
+// 모임명 허용 문자: 한글, 영문(대소문자), 숫자, 공백
+const MEETING_NAME_REGEX = /^[ㄱ-힣a-zA-Z0-9 ]*$/;
 
 export function useMeetCreateForm(
   initialHostName = '',
@@ -41,10 +41,12 @@ export function useMeetCreateForm(
   const [meetingNamePlaceholder] = useState(getRandomPlaceholder);
 
   const validateHostName = (value: string) => {
-    // 한글, 영문(대소문자)만 허용하는 정규식
-    const koreanEnglishOnly = /^[ㄱ-힣a-zA-Z]*$/;
+    // 한글, 영문(대소문자), 공백 허용
+    const koreanEnglishOnly = /^[ㄱ-힣a-zA-Z ]*$/;
 
-    if (value && !koreanEnglishOnly.test(value)) {
+    if (value !== '' && value.trim() === '') {
+      setHostNameError('공백만 입력할 수 없어요');
+    } else if (value && !koreanEnglishOnly.test(value)) {
       setHostNameError('한글, 영문만 입력 가능해요');
     } else {
       setHostNameError('');
@@ -67,7 +69,9 @@ export function useMeetCreateForm(
     const newValue = e.target.value;
     setMeetingName(newValue);
 
-    if (newValue && !MEETING_NAME_REGEX.test(newValue)) {
+    if (newValue !== '' && newValue.trim() === '') {
+      setMeetingNameError('공백만 입력할 수 없어요');
+    } else if (newValue && !MEETING_NAME_REGEX.test(newValue)) {
       setMeetingNameError('한글, 영문, 숫자만 입력 가능해요');
     } else {
       setMeetingNameError('');
@@ -79,7 +83,16 @@ export function useMeetCreateForm(
     setMeetingNameError('');
   };
 
-  const isValid = hostName.trim() !== '' && !hostNameError && !meetingNameError;
+  const isHostNameEmptyTrimOnly = hostName !== '' && hostName.trim() === '';
+  const isMeetingNameEmptyTrimOnly =
+    meetingName !== '' && meetingName.trim() === '';
+
+  const isValid =
+    hostName.trim() !== '' &&
+    !hostNameError &&
+    !meetingNameError &&
+    !isHostNameEmptyTrimOnly &&
+    !isMeetingNameEmptyTrimOnly;
 
   return {
     hostName,
